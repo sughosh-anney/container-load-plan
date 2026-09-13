@@ -1,0 +1,2296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Container Load Plan — ADF Foods</title>
+<style>
+:root{
+  /* ADF Foods brand — sampled directly from the company logo (deep red
+     "ADF" wordmark, green leaf accent), not a generic palette guess */
+  --concrete:#F7F5F4;
+  --panel:#fff;
+  --panel-2:#F7EEEF;
+  --ink:#1F2937;
+  --ink-2:#6B7280;
+  --rule:#E5E7EB;
+  --slate:#181A2B;
+  --marine:#C8102E;
+  --marine-dark:#9E0C24;
+  --green:#4A852B;
+  --green-dark:#3A6B21;
+  --signal:#E08A1E;
+  --alarm:#DC2626;
+  --disp:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --body:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --mono:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--concrete);
+  color:var(--ink);
+  font-family:var(--body);
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1480px;margin:0 auto;padding:28px 26px 70px}
+
+/* ---------- masthead ---------- */
+.mast{display:flex;flex-wrap:wrap;align-items:center;gap:20px 30px}
+.brand-logo{height:56px;width:auto;object-fit:contain}
+.eyebrow{font-size:12.5px;color:var(--ink-2)}
+h1{font-weight:800;font-size:clamp(22px,3vw,30px);line-height:1.1;letter-spacing:-.02em;margin:2px 0 0;color:var(--ink)}
+h1 em{font-style:normal;color:var(--marine)}
+.plate{margin-left:auto;display:flex;border-radius:16px;overflow:hidden;background:linear-gradient(135deg,#C8102E,#7A0D1F);box-shadow:0 8px 24px -8px rgba(200,16,46,.45)}
+.plate div{padding:14px 20px}
+.plate .k{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.65)}
+.plate .v{font-weight:800;font-size:22px;line-height:1.25;color:#fff}
+.plate .v small{font-size:12px;font-weight:500;color:rgba(255,255,255,.7)}
+.plate .over .v{color:#FFD1DC}
+
+/* ---------- wizard step navigation (pill/segmented) ---------- */
+.wizard-nav{display:flex;flex-wrap:wrap;gap:3px;margin-top:24px;background:var(--panel-2);border-radius:14px;padding:5px}
+.wizard-nav button{
+  font-family:var(--body);font-weight:600;font-size:13.5px;
+  background:transparent;color:var(--ink-2);border:0;padding:9px 17px;cursor:pointer;border-radius:10px;
+  transition:background .15s ease,color .15s ease,box-shadow .15s ease;
+}
+.wizard-nav button:hover{color:var(--ink)}
+.wizard-nav button.active{background:var(--ink);color:#fff;box-shadow:0 2px 8px -2px rgba(25,26,35,.4)}
+.wizard-nav button:disabled{color:#C7C5D6;cursor:not-allowed}
+.wizard-nav button:disabled:hover{color:#C7C5D6}
+.wz-step{display:none;margin-top:0}
+.wz-step.active{display:block}
+.wz-step>.card:first-child,.wz-step>.loadmode-row,.wz-step>.wz-intro{margin-top:0}
+.wz-nav-buttons{display:flex;justify-content:space-between;gap:10px;margin-top:22px}
+.wz-intro{max-width:640px;margin:24px auto 0;text-align:center;padding:36px 22px;background:var(--panel-2);border-radius:16px}
+.wz-intro p{color:var(--ink-2);font-size:14.5px}
+.loadmode-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;max-width:640px;margin:24px auto 0;padding:18px;background:var(--panel-2);border-radius:16px}
+.loadmode-row button{padding:20px;font-size:15px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.loadmode-row button svg{flex-shrink:0}
+@media (max-width:600px){.loadmode-row{grid-template-columns:1fr}}
+
+/* ---------- shipment reference strip ---------- */
+.ship-meta{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:18px;padding:18px 20px;background:var(--panel);border:1px solid var(--rule);border-radius:16px;box-shadow:0 1px 2px rgba(25,26,35,.03)}
+.ship-meta label{margin-bottom:4px}
+@media (max-width:760px){.ship-meta{grid-template-columns:1fr 1fr}}
+
+/* ---------- multi-container pager ---------- */
+.container-pager{display:flex;align-items:center;gap:12px;margin-top:18px;padding:12px 18px;background:#FFF1E8;border:1px solid #FFD9BF;border-radius:14px;font-size:13.5px;color:#8A3E12;box-shadow:0 1px 2px rgba(25,26,35,.03)}
+.container-pager span{margin-right:auto}
+.container-pager b{font-size:16px}
+.container-pager button:disabled{opacity:.4;cursor:default}
+
+/* ---------- layout ---------- */
+.grid{display:grid;grid-template-columns:330px minmax(0,1fr);gap:26px;margin-top:26px;align-items:start}
+@media (max-width:940px){.grid{grid-template-columns:1fr}}
+
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(25,26,35,.03),0 4px 14px -6px rgba(25,26,35,.06)}
+.card + .card{margin-top:18px}
+.card h2{
+  font-size:14px;font-weight:700;
+  margin:0;padding:13px 18px;border-bottom:1px solid var(--rule);color:var(--ink);background:var(--panel);
+  border-left:4px solid var(--marine);
+  display:flex;align-items:center;gap:8px
+}
+.card h2 b{margin-left:auto;font-weight:600;color:var(--marine)}
+.card .body{padding:18px}
+
+label{display:block;font-size:12.5px;font-weight:500;color:var(--ink-2);margin-bottom:4px}
+select,input[type=text],input[type=number]{
+  width:100%;font-family:var(--body);font-size:14px;color:var(--ink);
+  background:#fff;border:1.5px solid var(--rule);border-radius:9px;padding:7px 10px;
+  transition:border-color .15s ease,box-shadow .15s ease;
+}
+select{font-size:14px}
+input:focus-visible,select:focus-visible{outline:none;border-color:var(--marine);box-shadow:0 0 0 3px rgba(200,16,46,.15)}
+button:focus-visible{outline:2px solid var(--marine);outline-offset:2px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.mt{margin-top:10px}
+
+.util-break{margin-top:10px;padding-top:8px;border-top:1px solid var(--rule);font-size:12.5px;color:var(--ink-2);display:grid;gap:3px}
+.util-break b{color:var(--ink);font-weight:600}
+
+.shrink-sliders{display:grid;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--rule)}
+.shrink-sliders div{display:flex;align-items:center;gap:10px;font-size:12.5px;color:var(--ink-2)}
+.shrink-sliders input[type=range]{flex:1;accent-color:var(--marine)}
+.shrink-sliders b{color:var(--ink);width:38px;text-align:right}
+.loadord-sel{width:100%;margin-top:4px}
+
+/* ---------- packing: icon-based orientation grid ---------- */
+.orient-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px}
+.orient-cell{border:1.5px solid var(--rule);border-radius:10px;background:#fff;padding:12px 8px 12px;text-align:center;transition:border-color .15s ease}
+.orient-cell:has(input:checked){border-color:var(--marine);background:#FDF2F4}
+.orient-cell .lbl-title{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:8px}
+.orient-cell .lbl{font-size:11.5px;color:var(--ink-2);margin:8px 0 10px;line-height:1.3;min-height:28px;display:flex;align-items:center;justify-content:center}
+.orient-cell svg{display:block;margin:0 auto}
+.orient-cell input{margin:0;width:18px;height:18px;accent-color:var(--marine);cursor:pointer}
+.packing-intro{background:var(--panel-2);border-radius:12px;padding:14px 16px;margin:0 0 16px;font-size:13.5px;line-height:1.55;color:var(--ink-2)}
+.packing-intro b{color:var(--ink)}
+.bulk-orient{background:var(--panel-2);border-radius:12px;padding:14px;margin-bottom:16px}
+.bulk-orient .cap{font-size:12.5px;font-weight:600;color:var(--ink);margin-bottom:8px}
+.loaddir-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+.loaddir-cell{border:2px solid var(--rule);border-radius:10px;padding:10px;text-align:center;cursor:pointer;background:#fff;transition:border-color .15s ease}
+.loaddir-cell.sel{border-color:var(--marine);background:#FDF2F4}
+.loaddir-cell svg{display:block;margin:0 auto 6px}
+.loaddir-cell .cap{font-size:13px;font-weight:500}
+
+.final-result-note{border:1.5px solid var(--marine);border-radius:10px;padding:12px 14px;background:#FDF2F4}
+.final-result-note .cap{font-size:13.5px;font-weight:700;color:var(--marine)}
+.final-result-note .sub{font-size:12px;color:var(--ink-2);margin-top:4px;line-height:1.45}
+.sheet-actions{display:flex;gap:8px;flex-wrap:wrap}
+.sheet-actions button{flex:1;min-width:100px}
+
+.cmp-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-top:1px solid var(--rule);font-size:13.5px}
+.cmp-row:first-child{border-top:0}
+.cmp-name{flex:1;font-weight:600}
+.cmp-name .rec{margin-left:6px;font-size:10.5px;font-weight:700;background:var(--green);color:#fff;padding:2px 7px;border-radius:5px}
+.cmp-stats{font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+.cmp-stats .warn{color:var(--alarm);margin-left:4px}
+.cmp-row.cur{background:var(--panel-2);margin:0 -13px;padding:9px 13px;border-radius:10px}
+
+.manifest-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.manifest-tbl th,.manifest-tbl td{border:1px solid var(--rule);padding:8px 10px;text-align:left}
+.manifest-tbl th{background:var(--panel-2);font-weight:700;font-size:12.5px;color:var(--ink)}
+
+button{
+  font-family:var(--body);font-weight:600;font-size:14.5px;letter-spacing:0;text-transform:none;
+  background:var(--marine);color:#fff;border:0;border-radius:10px;padding:9px 18px;cursor:pointer;
+  transition:background .15s ease,box-shadow .15s ease,transform .05s ease;
+  box-shadow:0 2px 6px -2px rgba(200,16,46,.4)
+}
+button:hover{background:var(--marine-dark)}
+button:active{transform:translateY(1px)}
+button.ghost{background:#fff;color:var(--ink);border:1px solid var(--rule);box-shadow:none}
+button.ghost:hover{background:var(--panel-2);border-color:#c9c6de}
+button.ghost[aria-pressed=true]{background:var(--marine);color:#fff;border-color:var(--marine)}
+button.tiny{font-size:12.5px;padding:6px 11px;border-radius:8px}
+button.btn-next{background:var(--green);box-shadow:0 2px 6px -2px rgba(245,158,11,.45)}
+button.btn-next:hover{background:var(--green-dark)}
+button:disabled{opacity:.5;cursor:default;transform:none}
+
+/* ---------- sku list ---------- */
+.sku{border:1px solid var(--rule);background:#fff;padding:11px 13px 12px;position:relative;border-radius:12px;transition:box-shadow .15s ease}
+.sku:hover{box-shadow:0 4px 12px -6px rgba(25,26,35,.15)}
+.sku + .sku{margin-top:11px}
+.sku::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--c);border-radius:12px 0 0 12px}
+.sku .top{display:flex;align-items:center;gap:8px;margin-left:5px}
+.sku .box-code{font-weight:700;font-size:11.5px;letter-spacing:.02em;color:#fff;background:var(--c);padding:3px 8px;border-radius:5px;white-space:nowrap}
+.sku .nm{flex:1;min-width:0;font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sku .kill{background:none;border:0;color:var(--ink-2);font-size:15px;padding:0 3px;cursor:pointer}
+.sku .kill:hover{color:var(--alarm);background:none}
+.sku .fields{margin:8px 0 0 5px}
+.sku .fill{display:flex;align-items:center;gap:6px;margin-top:8px;margin-left:5px;font-size:13px;color:var(--ink-2)}
+.sku .fill input{width:auto}
+.sku .out{margin:8px 0 0 5px;font-size:12.5px;color:var(--ink-2);border-top:1px solid var(--rule);padding-top:7px}
+.sku .out b{color:var(--ink);font-weight:600}
+.sku .out .warn{color:var(--alarm)}
+
+/* ---------- viewport ---------- */
+.stage{background:#F7F6FC;border:1px solid var(--rule);border-radius:16px;position:relative;overflow:hidden}
+canvas#view{display:block;width:100%;height:min(58vh,540px);touch-action:none;cursor:grab}
+canvas#view.drag{cursor:grabbing}
+.hint{position:absolute;left:14px;bottom:12px;font-size:11.5px;color:var(--ink-2);pointer-events:none}
+.legend{position:absolute;right:14px;top:13px;display:flex;flex-direction:column;gap:5px;align-items:flex-end;pointer-events:none}
+.legend span{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink)}
+.legend i{width:11px;height:11px;display:block;border:1px solid rgba(25,26,35,.25);border-radius:3px}
+
+.stage-expand{position:absolute;left:14px;top:13px;font-size:12px;font-weight:600;padding:6px 12px;background:rgba(255,255,255,.85);border:1px solid var(--rule);color:var(--ink);border-radius:8px;backdrop-filter:blur(4px)}
+.stage-expand:hover{background:#fff}
+.stage.fullscreen{position:fixed;inset:0;z-index:1000;border:0;border-radius:0}
+.stage.fullscreen canvas#view{height:100vh!important}
+
+.bar{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px 15px;background:var(--panel);border:1px solid var(--rule);border-top:0;border-radius:0 0 16px 16px}
+.bar.dim{opacity:.4}
+.bar .views{display:flex;gap:5px}
+.scrub{flex:1;min-width:200px;display:flex;align-items:center;gap:10px}
+.scrub input[type=range]{flex:1;accent-color:var(--marine);height:22px}
+.scrub .lay{font-size:12.5px;color:var(--ink-2);white-space:nowrap}
+.scrub .lay b{color:var(--ink)}
+
+/* ---------- plan ---------- */
+canvas#plan{display:block;width:100%;height:auto;background:#fff}
+.steps{font-size:14px}
+.steps .z{border-top:1px solid var(--rule);padding:14px 0 2px}
+.steps .z:first-child{border-top:0;padding-top:2px}
+.steps .zh{display:flex;align-items:baseline;gap:9px}
+.steps .zh .tag{font-weight:700;font-size:13.5px;line-height:1;color:#fff;background:var(--c);padding:4px 8px;border-radius:6px;white-space:nowrap}
+.steps .zh .t{font-weight:700;font-size:15.5px}
+.steps .zh .d{font-size:12px;color:var(--ink-2);margin-left:auto;text-align:right}
+.steps ol{margin:8px 0 0;padding-left:19px}
+.steps li{margin:4px 0}
+.steps li span.n{font-weight:700;color:var(--marine)}
+.steps .warn{color:var(--alarm);font-weight:600}
+.note{margin-top:16px;border:1px solid var(--rule);border-left:4px solid var(--signal);background:#FFF3EE;padding:12px 14px;font-size:13.5px;border-radius:10px}
+.note b{font-size:14px;font-weight:700}
+.flag{margin-top:12px;border:1px solid var(--rule);border-left:4px solid var(--alarm);background:#FDEBF0;padding:12px 14px;font-size:13.5px;border-radius:10px}
+
+/* ---------- print-only 3D reference ---------- */
+.print-only{display:none}
+.legend-print{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:10px;font-family:var(--mono);font-size:11px;color:var(--ink-2)}
+.legend-print span{display:inline-flex;align-items:center;gap:6px}
+.legend-print i{width:10px;height:10px;display:inline-block;border:1px solid rgba(20,24,27,.3)}
+.print-view-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.print-view-cell{border:1px solid var(--rule);border-radius:8px;overflow:hidden}
+.print-view-cell b{display:block;padding:5px 9px;font-size:11.5px;font-weight:600;background:var(--panel-2);border-bottom:1px solid var(--rule)}
+.load-caption{margin:12px 0 0;padding:12px 14px;background:var(--panel-2);border-radius:10px;font-size:14px;line-height:1.5}
+.load-caption b{color:var(--marine)}
+
+@media print{
+  body{background:#fff}
+  .rail,.stage,.bar,#print,#reset,#wizardNav,#copyManifest{display:none!important}
+  .card{border-color:#999;break-inside:avoid}
+  .grid{display:block}
+  .print-only{display:block}
+  .print-only canvas{display:block;width:100%;height:400px;background:#F8F7FC}
+  .hero-view{height:520px!important}
+  .print-view-cell{break-inside:avoid}
+  .print-view-cell canvas{height:230px}
+  /* the on-screen floor-pattern/loading-order cards only ever show the one
+     container currently paged into view — printing uses the dynamically
+     built per-container sections in #printContainerSections instead, one
+     full set per equipment instance, so a multi-container plan isn't
+     silently under-printed */
+  #floorPatternCard,#loadingOrderCard{display:none!important}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="mast">
+    <img class="brand-logo" src="adf-logo.jpg" alt="ADF Foods Ltd.">
+    <div>
+      <h1>Container <em>load&nbsp;plan</em></h1>
+      <div class="eyebrow">Calculate the best way your cargo is loaded into any container or truck</div>
+    </div>
+    <div class="plate" id="plate"></div>
+  </div>
+
+  <nav class="wizard-nav" id="wizardNav">
+    <button data-step="start">Start</button>
+    <button data-step="cargo">Cargo dimensions</button>
+    <button data-step="loading">Loading</button>
+    <button data-step="pallets">Pallets</button>
+    <button data-step="equipment">Equipment</button>
+    <button data-step="packing">Packing</button>
+    <button data-step="result">Result</button>
+  </nav>
+
+  <!-- ===================== START ===================== -->
+  <section class="wz-step" data-step="start">
+    <div class="wz-intro">
+      <p>Set up your cargo, container and packing rules, then see the 3D loading plan and step-by-step instructions.</p>
+    </div>
+    <div class="ship-meta">
+      <div><label for="mRef">Reference name</label><input type="text" id="mRef" placeholder="Type a reference name or leave blank"></div>
+    </div>
+    <div class="wz-nav-buttons" style="justify-content:center">
+      <button class="btn-next" data-goto="cargo">Start calculation &rarr;</button>
+    </div>
+  </section>
+
+  <!-- ===================== CARGO DIMENSIONS ===================== -->
+  <section class="wz-step" data-step="cargo">
+    <div class="card">
+      <h2>Cargo dimensions <b id="skuCount"></b></h2>
+      <div class="body">
+        <div id="skus"></div>
+        <div class="row3 mt">
+          <select id="preset" title="Pick a carton type to add"></select>
+          <button id="add" title="Add the selected carton type to your load">Add box cargo</button>
+          <button class="ghost" id="addCyl" title="Add a round/drum-shaped cargo item">Add cylindrical cargo</button>
+        </div>
+      </div>
+    </div>
+    <div class="wz-nav-buttons">
+      <button class="ghost" data-goto="start">&larr; Back</button>
+      <button class="btn-next" data-goto="loading">Next: Loading &rarr;</button>
+    </div>
+  </section>
+
+  <!-- ===================== LOADING ===================== -->
+  <section class="wz-step" data-step="loading">
+    <div class="card">
+      <h2>Loading</h2>
+      <div class="body loadmode-row">
+        <button data-loadmode="bulk" id="loadModeBulk">
+          <svg width="70" height="56" viewBox="0 0 150 120" fill="none">
+            <polygon points="15,55 50,40 85,55 50,70" fill="#E8D9BE"/>
+            <polygon points="15,55 15,85 50,100 50,70" fill="#D4BD94"/>
+            <polygon points="50,70 50,100 85,85 85,55" fill="#BFA377"/>
+            <polygon points="60,45 95,30 130,45 95,60" fill="#EDDFC7"/>
+            <polygon points="60,45 60,70 95,85 95,60" fill="#D9C29C"/>
+            <polygon points="95,60 95,85 130,70 130,45" fill="#C4A97F"/>
+            <polygon points="38,20 73,5 108,20 73,35" fill="#E04A5C"/>
+            <polygon points="38,20 38,45 73,60 73,35" fill="#C8102E"/>
+            <polygon points="73,35 73,60 108,45 108,20" fill="#9E0C24"/>
+          </svg>
+          <span>Load as bulk cargo</span>
+        </button>
+        <button class="ghost" data-loadmode="pallet" id="loadModePallet">
+          <svg width="70" height="56" viewBox="0 0 150 120" fill="none">
+            <polygon points="10,80 75,58 140,80 75,102" fill="#D8C79E" stroke="#A98D5C" stroke-width="1.5"/>
+            <line x1="30" y1="82" x2="30" y2="94" stroke="#A98D5C" stroke-width="2.5"/>
+            <line x1="55" y1="74" x2="55" y2="86" stroke="#A98D5C" stroke-width="2.5"/>
+            <line x1="80" y1="66" x2="80" y2="78" stroke="#A98D5C" stroke-width="2.5"/>
+            <line x1="105" y1="74" x2="105" y2="86" stroke="#A98D5C" stroke-width="2.5"/>
+            <polygon points="35,48 75,34 115,48 75,62" fill="#EDDFC7"/>
+            <polygon points="35,48 35,66 75,80 75,62" fill="#D9C29C"/>
+            <polygon points="75,62 75,80 115,66 115,48" fill="#C4A97F"/>
+            <polygon points="35,22 75,8 115,22 75,36" fill="#5FA33C"/>
+            <polygon points="35,22 35,40 75,54 75,36" fill="#4A852B"/>
+            <polygon points="75,36 75,54 115,40 115,22" fill="#3A6B21"/>
+          </svg>
+          <span>Load on pallets</span>
+        </button>
+      </div>
+    </div>
+    <div class="wz-nav-buttons">
+      <button class="ghost" data-goto="cargo">&larr; Back</button>
+      <span></span>
+    </div>
+  </section>
+
+  <!-- ===================== PALLETS ===================== -->
+  <section class="wz-step" data-step="pallets">
+    <div class="card">
+      <h2>Pallet type</h2>
+      <div class="body">
+        <div class="row3">
+          <div><label for="palL">Length mm</label><input type="number" id="palL" value="1200"></div>
+          <div><label for="palW">Width mm</label><input type="number" id="palW" value="1000"></div>
+          <div><label for="palH">Max stack height mm</label><input type="number" id="palH" value="1500"></div>
+        </div>
+        <div class="row2 mt">
+          <div><label for="palWeight">Tare weight kg</label><input type="number" id="palWeight" value="25"></div>
+          <div><label for="palMaxKg">Max weight kg</label><input type="number" id="palMaxKg" value="800"></div>
+        </div>
+        <p style="color:var(--ink-2);font-size:12.5px;margin-top:10px">Each carton type is first stacked onto its own pallets (as high as the max stack height and weight allow), then the pallets are loaded into the container like large cartons.</p>
+      </div>
+    </div>
+    <div class="wz-nav-buttons">
+      <button class="ghost" data-goto="loading">&larr; Back</button>
+      <button class="btn-next" data-goto="equipment">Next: Equipment &rarr;</button>
+    </div>
+  </section>
+
+  <!-- ===================== EQUIPMENT ===================== -->
+  <section class="wz-step" data-step="equipment">
+    <div class="card">
+      <h2>Equipment</h2>
+      <div class="body">
+        <label for="cbox">Equipment</label>
+        <select id="cbox" title="Pick a standard container/truck size, or type your own dimensions below"></select>
+        <div class="row3 mt">
+          <div><label for="cDoor">Door placement</label>
+            <select id="cDoor"><option value="left">Left (default)</option><option value="top">Top</option><option value="none">None</option></select>
+          </div>
+          <div><label for="cP">Payload kg</label><input type="number" id="cP"></div>
+          <div><label for="cTara">Tare weight kg</label><input type="number" id="cTara" value="0" title="Empty weight of the container/truck itself, added to cargo weight for gross vehicle weight"></div>
+        </div>
+        <div class="row3 mt">
+          <div><label for="cL">Length mm</label><input type="number" id="cL"></div>
+          <div><label for="cW">Width mm</label><input type="number" id="cW"></div>
+          <div><label for="cH">Height mm</label><input type="number" id="cH"></div>
+        </div>
+        <div class="row3 mt">
+          <div><label for="cDoorW">Door width mm</label><input type="number" id="cDoorW" title="Width of the door opening — may be narrower than the interior"></div>
+          <div><label for="cDoorH">Door height mm</label><input type="number" id="cDoorH" title="Height of the door opening — may be narrower than the interior"></div>
+          <div><label for="cS">Max stack</label><input type="number" id="cS" min="1" placeholder="layers" title="Cap how many cartons high the stack may go, e.g. for crush-sensitive goods. Leave blank to use the full container height."></div>
+        </div>
+        <div class="shrink-sliders">
+          <div><label style="margin:0;min-width:110px">Shrink length</label><input type="range" id="shrinkL" min="80" max="100" value="100"><b id="shrinkLVal">100%</b></div>
+          <div><label style="margin:0;min-width:110px">Shrink width</label><input type="range" id="shrinkW" min="80" max="100" value="100"><b id="shrinkWVal">100%</b></div>
+          <div><label style="margin:0;min-width:110px">Shrink height</label><input type="range" id="shrinkH" min="80" max="100" value="100"><b id="shrinkHVal">100%</b></div>
+        </div>
+        <div class="util-break" id="utilBreak"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Compare equipment</h2>
+      <div class="body"><div id="compareBox"></div></div>
+    </div>
+
+    <div class="wz-nav-buttons">
+      <button class="ghost" data-goto="loading">&larr; Back</button>
+      <button class="btn-next" data-goto="packing">Next: Packing &rarr;</button>
+    </div>
+  </section>
+
+  <!-- ===================== PACKING ===================== -->
+  <section class="wz-step" data-step="packing">
+    <div class="card">
+      <h2>Packing &mdash; select cargo placement and conditions</h2>
+      <div class="body">
+        <p class="packing-intro">Some cartons can only be stacked one way up without risking damage — for example, a jar might crack if laid on its side. For each carton below, tick every side that is <b>safe to stand it on</b>. If more than one is ticked, the system will pick whichever packs tightest.</p>
+        <label>Loading direction</label>
+        <div id="loadDirGrid" class="loaddir-grid"></div>
+        <div id="packingSkus" class="mt"></div>
+      </div>
+    </div>
+    <div class="wz-nav-buttons">
+      <button class="ghost" data-goto="equipment">&larr; Back</button>
+      <button class="btn-next" data-goto="result">Calculate &rarr;</button>
+    </div>
+  </section>
+
+  <!-- ===================== RESULT ===================== -->
+  <section class="wz-step" data-step="result">
+    <div class="ship-meta">
+      <div><label for="mCont">Container no.</label><input type="text" id="mCont" placeholder="e.g. ABCU1234567"></div>
+      <div><label for="mSeal">Seal no.</label><input type="text" id="mSeal" placeholder="e.g. SL-009214"></div>
+      <div><label for="mDate">Loading date</label><input type="date" id="mDate"></div>
+    </div>
+
+    <div class="container-pager" id="containerPager" style="display:none" title="Cargo that doesn't fit in one unit automatically spills into another of the same equipment">
+      <span>Container <b id="contNum">1</b> / <b id="contTotal">1</b> &mdash; <span id="contLabel"></span></span>
+      <button class="ghost tiny" id="contPrev">&lsaquo; Prev container</button>
+      <button class="ghost tiny" id="contNext">Next container &rsaquo;</button>
+    </div>
+
+    <div class="grid">
+
+      <!-- ===== rail ===== -->
+      <div class="rail">
+        <div class="card">
+          <h2>Print &amp; share</h2>
+          <div class="body">
+            <div class="final-result-note">
+              <div class="cap">Final Result</div>
+              <div class="sub">The printed sheet always includes every 3D view, the floor pattern, step-by-step loading order for each carton, the manifest and sign-off — one complete report, nothing left out.</div>
+            </div>
+            <div class="sheet-actions mt">
+              <button id="print">Print sheet</button>
+              <button class="ghost" id="shareLink" title="Copy a link that reopens this exact plan">Copy link</button>
+              <button class="ghost" id="reset" title="Clear everything and start over from the default example">Reset plan</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== stage ===== -->
+      <div>
+        <div class="stage">
+          <canvas id="view"></canvas>
+          <div class="legend" id="legend"></div>
+          <div class="hint">Drag to turn &middot; scroll to zoom</div>
+          <button id="fullscreenBtn" class="stage-expand" title="Show the 3D model full screen">⛶ Full screen</button>
+        </div>
+        <div class="bar" id="layerBar">
+          <div class="views">
+            <button class="ghost tiny" data-v="iso">3/4</button>
+            <button class="ghost tiny" data-v="top">Top</button>
+            <button class="ghost tiny" data-v="side">Side</button>
+            <button class="ghost tiny" data-v="door">Door</button>
+          </div>
+          <div class="scrub">
+            <span class="lay">Built row <b id="layNum">—</b></span>
+            <input type="range" id="lay" min="1" max="1" value="1">
+            <button class="ghost tiny" id="play">Build</button>
+          </div>
+        </div>
+        <div class="bar" id="pieceBar">
+          <div class="scrub" title="Step through the load one carton at a time, in the same order the crew places them">
+            <span class="lay">Piece <b id="pieceNum">—</b> / <b id="pieceTotal">—</b></span>
+            <button class="ghost tiny" id="pcPrev10">&laquo; 10</button>
+            <button class="ghost tiny" id="pcPrev">&lsaquo; 1</button>
+            <button class="ghost tiny" id="pcNext">1 &rsaquo;</button>
+            <button class="ghost tiny" id="pcNext10">10 &raquo;</button>
+            <button class="ghost tiny" id="pcExit">Back to layers</button>
+          </div>
+        </div>
+
+        <!-- print-only: one full set of these three per equipment instance,
+             built dynamically at print time (see buildPrintSections()) so a
+             multi-container plan prints every unit, not just whichever one
+             is currently paged into view on screen -->
+        <div id="printContainerSections" class="print-only"></div>
+
+        <div class="card" id="floorPatternCard">
+          <h2>Floor pattern <b id="planTitle"></b></h2>
+          <div class="body"><canvas id="plan"></canvas></div>
+        </div>
+
+        <div class="card" id="loadingOrderCard">
+          <h2>Loading order</h2>
+          <div class="body steps" id="steps"></div>
+        </div>
+
+        <div class="card">
+          <h2>Sign-off</h2>
+          <div class="body row3">
+            <div><label for="sPrep">Prepared by</label><input type="text" id="sPrep"></div>
+            <div><label for="sCheck">Checked by</label><input type="text" id="sCheck"></div>
+            <div><label for="sDate">Date</label><input type="date" id="sDate"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2>Manifest <button class="ghost tiny" id="copyManifest" style="margin-left:auto" title="Copy as a tab-separated table for pasting into Excel or email">Copy</button></h2>
+          <div class="body"><div id="manifest"></div></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   1. REFERENCE DATA
+   ============================================================ */
+const CONTAINERS = {
+  '20DV': {name:'20 ft standard (20DV)', L:5890, W:2350, H:2390, payload:28200},
+  '40DV': {name:'40 ft standard (40DV)', L:12030, W:2350, H:2390, payload:26600},
+  '40HC': {name:'40 ft high cube (40HC)', L:12030, W:2350, H:2695, payload:26460},
+  'CUST': {name:'Custom box / truck body',L:6000, W:2400, H:2400, payload:20000}
+};
+
+// Shipper cartons, dimensions in mm (outer), kg gross.
+// Carton L×W×H and gross kg are estimated packing figures — swap in exact
+// packing-spec numbers if/when they're available from QA.
+const PRESETS = [
+  {name:'Mango Pickle in Oil 2×4.25kg Jar (Camel)',        d:[400,300,270], kg:10.0},
+  {name:'Butter Chicken Paste 2×6×200g (Ashoka)',          d:[330,250,160], kg:3.4},
+  {name:'Madras Spicy Pappadum 12×112g (Truly Indian)',    d:[380,280,130], kg:1.8},
+  {name:'Punjabi Samosa Frozen 12×800g (Ashoka)',          d:[400,300,280], kg:10.5},
+  {name:'Basmati Rice RTE Pouch 8×250g (Private Label)',   d:[300,220,140], kg:2.6}
+];
+
+const PAINT = ['#17567E','#B5522A','#2E7D6E','#6B5B95','#C08A0E','#46626F','#8E4C6E'];
+const ZONE_TAG = ['A','B','C','D','E','F','G'];
+
+/* ============================================================
+   2. STATE
+   ============================================================ */
+let box = JSON.parse(JSON.stringify(CONTAINERS['20DV']));
+let maxStack = null;
+let skus = [];
+let plan = null;
+// containerPlans holds one buildPlan() result per equipment instance when
+// cargo needs more than one of the same container (see buildAllContainers);
+// currentContainer/plan always point at whichever one is being viewed.
+let containerPlans = [];
+let currentContainer = 0;
+let loadDirection = 'front';
+// wallCut: null = not scrubbing by wall; a number = the Build control has
+// revealed the first N complete cross-section "walls" (plan.wallCuts), front
+// wall to doors. pieceCut: null = not scrubbing piece-by-piece; a number =
+// the interactive 3D view shows exactly the first N cartons of plan.sequence
+// (true crew build order). At most one of the two is active at a time.
+let wallCut = null;
+let pieceCut = null;
+
+function defaultSkus(){
+  skus = [
+    {...PRESETS[0], qty:120, fill:false},
+    {...PRESETS[1], qty:240, fill:false},
+    {...PRESETS[2], qty:0,   fill:true}
+  ].map((s,i)=>({name:s.name, d:[...s.d], kg:s.kg, qty:s.qty, fill:s.fill, upL:false, upW:false, upH:true,
+                 shape:'box', include:true, stackTop:true, stackUnder:true, loadOrder:'auto', color:PAINT[i]}));
+}
+
+/* ============================================================
+   3. PACKER
+   Each carton type gets a zone: a run of the container length.
+   Inside the zone the crew builds full floor layers.
+   ------------------------------------------------------------
+   For one orientation (l along length, w across width, h up):
+     rows  = how many fit across the width
+     Wrem  = leftover strip across the width
+     turned cartons (w along length, l across width) fill that strip
+   ============================================================ */
+const PERMS = [[0,1,2],[1,0,2],[0,2,1],[2,0,1],[1,2,0],[2,1,0]];
+
+// allowedAxes is [allowL, allowW, allowH] — whether the carton may stand with
+// its L, W, or H dimension (d[0]/d[1]/d[2]) facing up. p[2] is which original
+// index is "up" for a given permutation, so allowedAxes[p[2]] gates it.
+function orientations(d, H, cap, allowedAxes){
+  const out = [];
+  for (const p of PERMS){
+    if (!allowedAxes[p[2]]) continue;
+    const l = d[p[0]], w = d[p[1]], h = d[p[2]];
+    let layers = Math.floor(H / h);
+    if (cap) layers = Math.min(layers, cap);
+    if (layers < 1) continue;
+    out.push({l, w, h, layers, up:p[2], along:p[0], across:p[1]});
+  }
+  return out;
+}
+
+// cartons in a zone of nCols columns, for one orientation
+function zoneCount(o, W, nCols){
+  const rows = Math.floor(W / o.w);
+  const Wrem = W - rows * o.w;
+  const turnRows = Math.floor(Wrem / o.l);          // across the leftover strip
+  const turnCols = turnRows > 0 ? Math.floor(nCols * o.l / o.w) : 0;
+  const perLayer = rows * nCols + turnRows * turnCols;
+  return {rows, Wrem, turnRows, turnCols, perLayer, total: perLayer * o.layers};
+}
+
+// cartons per mm of zone length — used to rank orientations
+function density(o, W){
+  const c = zoneCount(o, W, 60);
+  return c.total / (60 * o.l);
+}
+
+function pickOrientation(sku, W, H, cap){
+  let os = orientations(sku.d, H, cap, [sku.upL, sku.upW, sku.upH]);
+  // if none of the allowed faces actually fit (or none were allowed at all),
+  // fall back to trying every orientation rather than reporting "no room"
+  if (!os.length) os = orientations(sku.d, H, cap, [true, true, true]);
+  if (!os.length) return null;
+  os.sort((a,b) => density(b,W) - density(a,W) || b.layers - a.layers);
+  return os[0];
+}
+
+// "Shrink" sliders model lost usable space (insulation ribs, wheel arches,
+// bracing) as a straight percentage off each interior dimension — the
+// container shell still renders at its nominal size, so the difference
+// shows up as extra free length / a less-crammed width and height.
+function effectiveBox(b){
+  const sl = (b.shrinkL||100)/100, sw = (b.shrinkW||100)/100, sh = (b.shrinkH||100)/100;
+  if (sl===1 && sw===1 && sh===1) return b;
+  return {...b, L: Math.max(1, Math.round(b.L*sl)), W: Math.max(1, Math.round(b.W*sw)), H: Math.max(1, Math.round(b.H*sh))};
+}
+
+function buildPlan(boxArg, maxStackArg, skusArg){
+  // optional overrides let the compare-equipment feature (and the
+  // multi-container packer below) evaluate other container types/cargo
+  // lists without touching the live box/maxStack/skus state
+  const useBox = effectiveBox(boxArg || box);
+  const useMaxStack = (maxStackArg !== undefined) ? maxStackArg : maxStack;
+  const useSkus = skusArg || skus;
+  const zones = new Array(useSkus.length);
+
+  // Processing order follows each SKU's "Loading order" priority (set on the
+  // Packing step): "rear" (closest to the front bulkhead) goes first, "door"
+  // (closest to the doors) goes last, "auto" keeps the list order in between.
+  // Array.sort is a stable sort, so ties keep their original relative order.
+  // Excluded ("Include in loading" unticked) SKUs are skipped entirely.
+  const rank = p => p==='rear' ? 0 : p==='door' ? 2 : 1;
+  const order = useSkus.map((sku,i)=>({sku,i})).filter(o=>o.sku.include!==false);
+  order.sort((a,b)=> rank(a.sku.loadOrder) - rank(b.sku.loadOrder));
+
+  let x = 0;
+  order.forEach(({sku,i}, buildOrder) => {
+    const avail = useBox.L - x;
+    const o = pickOrientation(sku, useBox.W, useBox.H, useMaxStack);
+    const z = {sku, tag:ZONE_TAG[i%7], color:sku.color, x0:x, o, boxes:[], loaded:0, buildOrder,
+               want: sku.fill ? Infinity : Math.max(0, Math.round(sku.qty)||0), fits:true};
+
+    // a carton with quantity 0 takes up no length at all — it isn't a "doesn't fit" case
+    if (!sku.fill && z.want === 0){ z.nCols=0; z.len=0; z.cap=0; z.short=0; z.zeroQty=true; zones[i]=z; return; }
+
+    if (!o || avail < Math.min(...sku.d)){ z.fits=false; z.nCols=0; z.len=0; zones[i]=z; return; }
+
+    const maxCols = Math.floor(avail / o.l);
+    if (maxCols < 1){ z.fits=false; z.nCols=0; z.len=0; zones[i]=z; return; }
+
+    let cols = maxCols;
+    if (!sku.fill){
+      cols = 1;
+      while (cols < maxCols && zoneCount(o, useBox.W, cols).total < z.want) cols++;
+    }
+    const c = zoneCount(o, useBox.W, cols);
+    z.nCols = cols;
+    z.cap = c.total;
+    z.pat = c;
+
+    // Once every full o.l column is used up there's often a sliver of length
+    // left over — shorter than one more column, but real crews don't leave it
+    // empty: they turn a few more cartons 90° to use it (so some cartons in
+    // the zone run one way, some run the other). Only borrow this sliver once
+    // this zone has genuinely used all its available length — a "fill" zone,
+    // or a zone that still hasn't reached its requested quantity.
+    let tail = null;
+    const frag = avail - cols * o.l;
+    if (cols === maxCols && frag >= o.w){
+      const tailCols = Math.floor(frag / o.w);
+      const tailRows = Math.floor(useBox.W / o.l);
+      if (tailCols > 0 && tailRows > 0){
+        const perLayer = tailCols * tailRows;
+        tail = {cols: tailCols, rows: tailRows, perLayer, total: perLayer * o.layers};
+      }
+    }
+    z.tail = tail;
+    const tailTotal = tail ? tail.total : 0;
+
+    z.len = cols * o.l + (tail ? tail.cols * o.w : 0);
+    z.want = sku.fill ? (c.total + tailTotal) : z.want;
+    z.short = Math.max(0, z.want - (c.total + tailTotal));
+
+    // ---- generate carton positions, layer by layer (that is the loading order)
+    const target = Math.min(z.want, c.total + tailTotal);
+    const cells = [];
+    for (let r = 0; r < c.rows; r++)
+      for (let cc = 0; cc < cols; cc++)
+        cells.push({x: x + cc*o.l, z: r*o.w, dx:o.l, dz:o.w, turned:false});
+    for (let j = 0; j < c.turnRows; j++)
+      for (let k = 0; k < c.turnCols; k++)
+        cells.push({x: x + k*o.w, z: c.rows*o.w + j*o.l, dx:o.w, dz:o.l, turned:true});
+    if (tail){
+      for (let k2 = 0; k2 < tail.cols; k2++)
+        for (let r2 = 0; r2 < tail.rows; r2++)
+          cells.push({x: x + cols*o.l + k2*o.w, z: r2*o.l, dx:o.w, dz:o.l, turned:true});
+    }
+
+    let n = 0;
+    for (let ly = 0; ly < o.layers && n < target; ly++){
+      for (const cell of cells){
+        if (n >= target) break;
+        z.boxes.push({x:cell.x, y:ly*o.h, z:cell.z, dx:cell.dx, dy:o.h, dz:cell.dz,
+                      layer:ly, turned:cell.turned, color:sku.color});
+        n++;
+      }
+    }
+    z.loaded = n;
+    z.layersUsed = Math.ceil(n / Math.max(1, cells.length));
+    z.headroom = useBox.H - o.layers * o.h;
+    x += z.len;
+    zones[i] = z;
+  });
+
+  // SKUs left out via "Include in loading" (or any other gap) still need a
+  // placeholder zone so plan.zones[i] stays aligned with skus[i] for the UI
+  useSkus.forEach((sku,i)=>{
+    if (zones[i]) return;
+    zones[i] = {sku, tag:ZONE_TAG[i%7], color:sku.color, x0:0, o:null, boxes:[], loaded:0, buildOrder:Infinity,
+                want:0, fits:true, nCols:0, len:0, cap:0, short:0, excluded:true};
+  });
+
+  // "Doors → front bulkhead" mirrors every position front-to-back so the
+  // crew builds from the door end first — the geometry above is always
+  // computed front-to-back, then flipped here if the direction is reversed.
+  // Note: the free-length gap and "door end" dunnage wording further down
+  // still assume the gap sits at the door end, which is a known simplification
+  // when this is reversed.
+  if (loadDirection === 'rear'){
+    for (const z of zones){
+      if (!z.len) continue;
+      z.x0 = useBox.L - (z.x0 + z.len);
+      for (const b of z.boxes) b.x = useBox.L - (b.x + b.dx);
+    }
+  }
+
+  // ---- totals
+  let vol = 0, kg = 0, mom = 0, cartons = 0, maxLayers = 1, widUsed = 0, htUsed = 0, floorArea = 0;
+  for (const z of zones){
+    for (const b of z.boxes){
+      vol += b.dx*b.dy*b.dz;
+      kg  += z.sku.kg;
+      mom += z.sku.kg * (b.x + b.dx/2);
+      cartons++;
+      if (b.z + b.dz > widUsed) widUsed = b.z + b.dz;
+      if (b.y + b.dy > htUsed) htUsed = b.y + b.dy;
+      if (b.layer === 0) floorArea += b.dx * b.dz;
+    }
+    if (z.o) maxLayers = Math.max(maxLayers, z.layersUsed || 1);
+  }
+  // Flat build-order sequence of every carton, zone-by-zone in the same
+  // priority order the crew actually loads them in. Within a zone, boxes are
+  // sorted by length position first (not layer first) — a crew builds one
+  // complete cross-section (every width position, floor to headroom) at a
+  // given length position, then retreats toward the doors to start the next
+  // one. You physically can't build one shared floor layer across the whole
+  // zone first and add height afterwards — there'd be no way to reach back
+  // in to stack a second layer without climbing over what's already placed.
+  const sequence = zones.filter(z=>z.len>0).slice().sort((a,b)=>a.buildOrder-b.buildOrder)
+    .flatMap(z => z.boxes.slice().sort((p,q)=> (p.x-q.x) || (p.layer-q.layer) || (p.z-q.z)));
+
+  // Groups `sequence` into "walls" — every carton sharing the same length
+  // position, in the order they're reached. wallCuts[i] is the cumulative
+  // piece count once wall i+1 is fully built, so the Build control can step
+  // one complete cross-section at a time (via pieceCut) instead of one
+  // individual carton at a time.
+  const wallCuts = [];
+  { let curX = null, running = 0;
+    for (const b of sequence){
+      if (curX === null) curX = b.x;
+      else if (b.x !== curX){ wallCuts.push(running); curX = b.x; }
+      running++;
+    }
+    if (running) wallCuts.push(running);
+  }
+
+  const boxVol = useBox.L*useBox.W*useBox.H;
+  return {
+    zones, cartons, maxLayers, sequence, wallCuts,
+    usedLen: x, freeLen: useBox.L - x,
+    util: 100*vol/boxVol,
+    cbm: vol/1e9, boxCbm: boxVol/1e9,
+    kg,
+    over: kg > useBox.payload,
+    widUsed, htUsed, floorArea: floorArea/1e6,
+    lenPct: 100*x/useBox.L, widPct: 100*widUsed/useBox.W, htPct: 100*htUsed/useBox.H,
+    floorPct: 100*floorArea/(useBox.L*useBox.W),
+    cog: kg > 0 ? 100*(mom/kg)/useBox.L : 50
+  };
+}
+
+// Multi-container auto-splitting: if a fixed-quantity SKU can't all fit in
+// one container, load as much as fits, then repeat with a fresh container
+// of the SAME type for whatever's left — same behaviour pier2pier uses
+// (confirmed live: a 2600-piece single-SKU test split into 2x 20'DC, the
+// first packed to ~97% and the remainder into a second). A "fill" SKU never
+// forces a new container by itself (it has no fixed quantity to fall short
+// of) — it only ever tops up whatever container is already being built.
+function buildAllContainers(boxArg, maxStackArg, skusArg){
+  const baseSkus = skusArg || skus;
+  const remaining = baseSkus.map(s => s.fill ? Infinity
+    : (s.include===false ? 0 : Math.max(0, Math.round(s.qty)||0)));
+  const containers = [];
+  const MAX_CONTAINERS = 50; // safety backstop, not a real-world expectation
+  for (let c = 0; c < MAX_CONTAINERS; c++){
+    const tempSkus = baseSkus.map((s,i)=>({...s, qty: s.fill ? s.qty : remaining[i]}));
+    const planC = buildPlan(boxArg, maxStackArg, tempSkus);
+    containers.push(planC);
+
+    let anyRemaining = false, loadedThisRound = 0;
+    planC.zones.forEach((z,i)=>{
+      if (baseSkus[i].fill || baseSkus[i].include===false) return;
+      loadedThisRound += z.loaded;
+      remaining[i] = Math.max(0, remaining[i] - z.loaded);
+      if (remaining[i] > 0) anyRemaining = true;
+    });
+    if (!anyRemaining) break;
+    // nothing at all fit this round (e.g. a carton too big for an empty
+    // container) — adding more containers would just repeat the same zero
+    if (loadedThisRound === 0) break;
+  }
+  return containers;
+}
+
+/* ============================================================
+   3b. COMPARE EQUIPMENT — run the same cargo mix against every
+   standard container type (never the "Custom" placeholder, which
+   isn't a fixed real-world spec) and recommend the best fit.
+   ============================================================ */
+// Runs the full multi-container simulation for a candidate equipment type —
+// "short" is now only ever nonzero when a single carton genuinely can't fit
+// in even an empty unit of that type (buildAllContainers already keeps
+// adding containers until everything else fits).
+function evaluateContainer(key){
+  const cand = CONTAINERS[key];
+  const plans = buildAllContainers(cand, maxStack);
+  const cartons = plans.reduce((s,p)=>s+p.cartons, 0);
+  const kg = plans.reduce((s,p)=>s+p.kg, 0);
+  const cbm = plans.reduce((s,p)=>s+p.cbm, 0);
+  const boxCbm = plans.reduce((s,p)=>s+p.boxCbm, 0);
+  const over = plans.some(p=>p.over);
+  const short = plans[plans.length-1].zones.reduce((s,z)=> s + (z.short||0), 0);
+  return {key, name:cand.name, containers:plans.length, cartons, util:100*cbm/boxCbm, kg, over, short, fitsAll: short===0};
+}
+
+function renderCompare(){
+  const el = document.getElementById('compareBox');
+  if (!el) return;
+  const results = Object.keys(CONTAINERS).filter(k=>k!=='CUST').map(evaluateContainer);
+  const currentKey = cbox.value;
+  // fewest containers wins first (that's the real cost driver), then best utilization
+  let rec = results.filter(r=>r.fitsAll && !r.over).sort((a,b)=> a.containers-b.containers || b.util-a.util)[0];
+  if (!rec) rec = results.slice().sort((a,b)=>a.short-b.short)[0];
+  el.innerHTML = results.map(r=>{
+    const badge = rec && r.key===rec.key ? '<span class="rec">Recommended</span>' : '';
+    const warn = r.over ? '<span class="warn">overweight</span>' : (r.short>0 ? `<span class="warn">${r.short} short</span>` : '');
+    const qty = r.containers > 1 ? `${r.containers}&times; ` : '';
+    return `<div class="cmp-row ${r.key===currentKey?'cur':''}">
+      <div class="cmp-name">${qty}${r.name}${badge}</div>
+      <div class="cmp-stats">${r.cartons.toLocaleString()} ctn · ${r.util.toFixed(0)}% full ${warn}</div>
+      <button class="ghost tiny" data-use="${r.key}">${r.key===currentKey?'Current':'Use this'}</button>
+    </div>`;
+  }).join('');
+}
+
+/* ============================================================
+   4. 3D VIEW  — painter's algorithm on a 2D canvas
+   ============================================================ */
+const view = document.getElementById('view');
+const g = view.getContext('2d');
+let cam = {yaw:-0.62, pitch:0.42, zoom:1};
+let drag = null;
+
+// Adjacent carton faces meet edge-to-edge in 3D, but the projected screen
+// coordinates round to slightly different sub-pixel positions — painted
+// with their exact polygon, that leaves hairline gaps at shared edges
+// (worst against the dark background at the model's outer silhouette,
+// where it reads as a small black notch). Nudging each face's corners
+// outward from its own centroid by a fixed screen-space margin makes
+// neighbouring faces overlap by that margin instead of gapping.
+function inflatePts(pts, px){
+  let cx=0, cy=0;
+  for (const p of pts){ cx+=p[0]; cy+=p[1]; }
+  cx/=pts.length; cy/=pts.length;
+  return pts.map(p=>{
+    const dx=p[0]-cx, dy=p[1]-cy;
+    const len = Math.hypot(dx,dy) || 1;
+    return [p[0]+dx/len*px, p[1]+dy/len*px];
+  });
+}
+
+// Accepts either a "#rrggbb" hex color OR shade()'s own "rgb(r,g,b)" output —
+// turned cartons call this twice in a row (once to darken for being turned,
+// again per-face for lighting), and feeding an rgb(...) string back through
+// the old hex-only parser silently produced NaN channels that bitwise-AND'd
+// down to solid black. Real bug, not specific to any one camera angle — it
+// just took a large/zoomed turned-carton render to notice the fill was
+// black instead of merely dark.
+function shade(color, amt){
+  let r, g, b;
+  if (color[0] === '#'){
+    const n = parseInt(color.slice(1),16);
+    r=(n>>16)&255; g=(n>>8)&255; b=n&255;
+  } else {
+    const m = color.match(/\d+(\.\d+)?/g).map(Number);
+    [r,g,b] = m;
+  }
+  if (amt>0){ r+= (255-r)*amt; g+=(255-g)*amt; b+=(255-b)*amt; }
+  else { r*=(1+amt); g*=(1+amt); b*=(1+amt); }
+  return `rgb(${r|0},${g|0},${b|0})`;
+}
+
+// clientWidth/clientHeight read 0 for a canvas that's part of the print-only
+// DOM during real PDF/print generation (confirmed via page.pdf() — its print
+// layout isn't necessarily settled yet at the point beforeprint fires, unlike
+// page.emulateMedia() followed by a later paint, which is what on-screen
+// testing had been using and never caught this). Falling back to a fixed
+// content-width guess keeps every print canvas from silently rendering as a
+// blank 1×1 image — 700/400 already matched drawPlan()'s own pre-existing
+// fallback for the same reason. wArg/hArg let a caller override that default
+// guess for canvases that AREN'T full-card-width (e.g. the 5-up print view
+// grid) — without it every cell would size itself as if it were the full
+// 700px-wide card and render squashed once CSS actually lays it out smaller.
+function fitCanvas(c, h, wArg){
+  const dpr = window.devicePixelRatio || 1;
+  const w = wArg || c.clientWidth || 700;
+  const hh = h || c.clientHeight || 400;
+  c.width = Math.max(1, Math.round(w*dpr));
+  c.height = Math.max(1, Math.round(hh*dpr));
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {w, h:hh};
+}
+
+function makeProjector(size, camOverride){
+  const c0 = camOverride || cam;
+  const cx = box.L/2, cy = box.H/2, cz = box.W/2;
+  const diag = Math.hypot(box.L, box.W, box.H);
+  const R = diag * 2.1;
+  const f = Math.min(size.w, size.h) * 0.62 * c0.zoom * R / diag;
+  const cyaw=Math.cos(c0.yaw), syaw=Math.sin(c0.yaw);
+  const cp=Math.cos(c0.pitch), sp=Math.sin(c0.pitch);
+  const ox = size.w/2, oy = size.h/2 + size.h*0.06;
+  return function(px,py,pz){
+    const dx=px-cx, dy=py-cy, dz=pz-cz;
+    const x1 = dx*cyaw - dz*syaw;
+    const z1 = dx*syaw + dz*cyaw;
+    const y2 = dy*cp - z1*sp;
+    const z2 = dy*sp + z1*cp + R;
+    const s = f / Math.max(z2, R*0.15);
+    return [ox + x1*s, oy - y2*s, z2];
+  };
+}
+
+function drawView(){
+  const size = fitCanvas(view);
+  g.clearRect(0,0,size.w,size.h);
+  g.fillStyle = '#F7F6FC';
+  g.fillRect(0,0,size.w,size.h);
+  if (!plan) return;
+  const P = makeProjector(size);
+  const L=box.L, W=box.W, H=box.H;
+
+  // --- floor
+  const f00=P(0,0,0), f10=P(L,0,0), f11=P(L,0,W), f01=P(0,0,W);
+  g.beginPath();
+  g.moveTo(f00[0],f00[1]); g.lineTo(f10[0],f10[1]); g.lineTo(f11[0],f11[1]); g.lineTo(f01[0],f01[1]);
+  g.closePath();
+  g.fillStyle='#EBE9F5'; g.fill();
+
+  // floor grid every 1000 mm
+  g.strokeStyle='rgba(25,26,35,.1)'; g.lineWidth=1;
+  for (let xx=0; xx<=L; xx+=1000){ const a=P(xx,0,0), b=P(xx,0,W); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); }
+  for (let zz=0; zz<=W; zz+=1000){ const a=P(0,0,zz), b=P(L,0,zz); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); }
+
+  // corrugation ribs on the two side walls + front bulkhead
+  g.strokeStyle='rgba(25,26,35,.06)';
+  for (let xx=200; xx<L; xx+=300){
+    for (const zz of [0,W]){ const a=P(xx,0,zz), b=P(xx,H,zz); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); }
+  }
+  for (let zz=150; zz<W; zz+=300){ const a=P(0,0,zz), b=P(0,H,zz); g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); }
+
+  // zone dividers painted on the floor
+  for (const z of plan.zones){
+    if (!z.len) continue;
+    const a=P(z.x0,0,0), b=P(z.x0,0,W);
+    g.strokeStyle='rgba(224,138,30,.55)'; g.lineWidth=1.4; g.setLineDash([9,7]);
+    g.beginPath(); g.moveTo(a[0],a[1]); g.lineTo(b[0],b[1]); g.stroke(); g.setLineDash([]);
+  }
+
+  // --- shell wireframe (ghosted, drawn before cargo)
+  drawShell(g, P,'rgba(25,26,35,.25)',1.1);
+
+  // --- cartons, far to near
+  // Three reveal modes: wall-by-wall (the Build control — one complete
+  // cross-section at a time, front wall to doors, since that's how a crew
+  // actually builds it), piece-by-piece (every individual carton in true
+  // build order), or the full finished load when neither scrub is active.
+  // (No "currently being built" highlight — every carton just shows its
+  // real colour regardless of reveal progress.)
+  let all;
+  if (wallCut != null){
+    all = plan.sequence.slice(0, plan.wallCuts[wallCut-1] || 0);
+  } else if (pieceCut != null){
+    all = plan.sequence.slice(0, pieceCut);
+  } else {
+    all = plan.sequence;
+  }
+  const revealedSet = (wallCut != null || pieceCut != null) ? new Set(all) : null;
+
+  const items = all.map(b=>{
+    const c = P(b.x+b.dx/2, b.y+b.dy/2, b.z+b.dz/2);
+    return {b, depth:c[2]};
+  }).sort((p,q)=> (q.depth - p.depth) || (p.b.x+p.b.z) - (q.b.x+q.b.z));
+
+  const thin = items.length > 900;
+  g.lineWidth = thin ? 0.5 : 0.8;
+
+  for (const it of items){
+    const b = it.b;
+    // cartons turned 90° to use up a leftover strip are shaded a touch darker,
+    // so it's visible at a glance which run one way and which run the other
+    const base = b.turned ? shade(b.color, -0.3) : b.color;
+    const faces = visibleFaces(b, P);
+    // fill on slightly inflated corners (closes hairline seams between
+    // neighbouring cartons), stroke on the true corners (crisp, accurately
+    // placed carton-boundary lines)
+    for (const fc of faces){
+      const ip = inflatePts(fc.pts, 1.4);
+      g.beginPath();
+      g.moveTo(ip[0][0],ip[0][1]);
+      for (let i=1;i<4;i++) g.lineTo(ip[i][0],ip[i][1]);
+      g.closePath();
+      g.fillStyle = shade(base, fc.lit);
+      g.fill();
+    }
+    g.strokeStyle = 'rgba(0,0,0,.32)';
+    for (const fc of faces){
+      g.beginPath();
+      g.moveTo(fc.pts[0][0],fc.pts[0][1]);
+      for (let i=1;i<4;i++) g.lineTo(fc.pts[i][0],fc.pts[i][1]);
+      g.closePath();
+      g.stroke();
+    }
+  }
+
+  // --- shell again, so the near edges read on top of cargo
+  drawShell(g, P,'rgba(25,26,35,.45)',1.3);
+
+  // door aperture marker
+  const d0=P(L,0,0), d1=P(L,H,0), d2=P(L,H,W), d3=P(L,0,W);
+  g.strokeStyle='rgba(224,138,30,.8)'; g.lineWidth=2;
+  g.beginPath(); g.moveTo(d0[0],d0[1]); g.lineTo(d1[0],d1[1]); g.lineTo(d2[0],d2[1]); g.lineTo(d3[0],d3[1]); g.stroke();
+  const dm = P(L, H*0.5, W*0.5);
+  g.font = "600 11px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+  g.fillStyle = 'rgba(224,138,30,.95)';
+  g.textAlign='center';
+  g.fillText('DOORS', dm[0], dm[1]);
+
+  drawZoneCodes(g, P, plan.zones, revealedSet ? (b=>revealedSet.has(b)) : null);
+}
+
+/* ============================================================
+   4b. PRINT-ONLY 3D VIEW — same painter's algorithm, light paper
+   background, fixed camera, and the complete load (no layer cut,
+   no "current layer" highlight) since this is a static reference
+   image for the loading crew, not the interactive scrubber.
+   ============================================================ */
+const PRINT_CAM = {yaw:-0.62, pitch:0.40, zoom:0.94};
+
+// The static reference angles printed for every container — flat two sides,
+// both ends, a top-down, and two opposite 3/4-isometric corners (deliberately
+// NOT the same angle as the hero view above, which already covers one
+// corner at large scale — these two add genuinely new perspectives rather
+// than repeating it). "Left"/"Right" are simply the two ends of the yaw axis
+// (which physical side that lands on is arbitrary — what matters is the two
+// sides are clearly distinguished); "Door"/"Down" are the two ends of the
+// length axis (the door end, and the front-bulkhead end mirroring it); "Up"
+// is the top-down cam.
+// Started at 4 corner views (all 9 total) but that roughly quadrupled print
+// generation time and file size for a multi-container plan versus the
+// original 5 — trimmed to the 2 most different (diagonally opposite)
+// corners as a better cost/coverage tradeoff.
+const PRINT_VIEWS = [
+  { label:'Left',        cam:{yaw:0,               pitch:0.08, zoom:0.98} },
+  { label:'Right',       cam:{yaw:Math.PI,         pitch:0.08, zoom:0.98} },
+  { label:'Door',        cam:{yaw:-Math.PI/2,      pitch:0.12, zoom:1.1} },
+  { label:'Down',        cam:{yaw:Math.PI/2,       pitch:0.12, zoom:1.1} },
+  { label:'Up',          cam:{yaw:-0.0001,         pitch:1.45, zoom:1} },
+  { label:'Corner A',    cam:{yaw:0.62,            pitch:0.40, zoom:0.94} },
+  { label:'Corner B',    cam:{yaw:Math.PI+0.62,    pitch:0.40, zoom:0.94} },
+];
+
+// canvasArg/planArg let the multi-container print generator reuse this for
+// every equipment instance's own freshly-created canvas, not just the one
+// static #viewPrint card used when there's only a single container.
+// camArg picks which of PRINT_VIEWS' angles to render (defaults to the
+// original single 3/4-ish overview angle). sizeArg is a {w,h} fallback for
+// canvases that aren't full-card-width (see fitCanvas's wArg). heroMode
+// draws the big-format load-order numbers and the "load this way" arrow —
+// only the large primary print view uses it, not the 5 small reference angles.
+function drawViewPrint(canvasArg, planArg, camArg, sizeArg, heroMode){
+  const cv = canvasArg || document.getElementById('viewPrint');
+  const p = planArg || plan;
+  const baseCam = camArg || PRINT_CAM;
+  const gp = cv.getContext('2d');
+  const size = fitCanvas(cv, sizeArg && sizeArg.h, sizeArg && sizeArg.w);
+  gp.clearRect(0,0,size.w,size.h);
+  gp.fillStyle = '#F8F7FC';
+  gp.fillRect(0,0,size.w,size.h);
+  if (!p) return;
+  const L=box.L, W=box.W, H=box.H;
+
+  // This print card is always a fixed-height, wide strip — very different
+  // proportions from the interactive #view canvas — so a single fixed zoom
+  // constant leaves a lot of dead white space for a long container and
+  // could clip a short/tall one. Auto-fit instead: project the 8 shell
+  // corners at the base zoom, measure their screen bounding box, then scale
+  // zoom so the model fills most of the card regardless of L/W/H proportions.
+  const baseP = makeProjector(size, baseCam);
+  const corners = [[0,0,0],[L,0,0],[L,0,W],[0,0,W],[0,H,0],[L,H,0],[L,H,W],[0,H,W]].map(p=>baseP(p[0],p[1],p[2]));
+  const xs = corners.map(c=>c[0]), ys = corners.map(c=>c[1]);
+  const bw = Math.max(...xs) - Math.min(...xs) || 1;
+  const bh = Math.max(...ys) - Math.min(...ys) || 1;
+  const fit = Math.min((size.w*0.86)/bw, (size.h*0.8)/bh);
+  const P = makeProjector(size, {...baseCam, zoom: baseCam.zoom * fit});
+
+  // floor
+  const f00=P(0,0,0), f10=P(L,0,0), f11=P(L,0,W), f01=P(0,0,W);
+  gp.beginPath();
+  gp.moveTo(f00[0],f00[1]); gp.lineTo(f10[0],f10[1]); gp.lineTo(f11[0],f11[1]); gp.lineTo(f01[0],f01[1]);
+  gp.closePath();
+  gp.fillStyle='#EBE9F5'; gp.fill();
+
+  // floor grid every 1000 mm
+  gp.strokeStyle='rgba(25,26,35,.12)'; gp.lineWidth=1;
+  for (let xx=0; xx<=L; xx+=1000){ const a=P(xx,0,0), b=P(xx,0,W); gp.beginPath(); gp.moveTo(a[0],a[1]); gp.lineTo(b[0],b[1]); gp.stroke(); }
+  for (let zz=0; zz<=W; zz+=1000){ const a=P(0,0,zz), b=P(L,0,zz); gp.beginPath(); gp.moveTo(a[0],a[1]); gp.lineTo(b[0],b[1]); gp.stroke(); }
+
+  // zone dividers painted on the floor
+  for (const z of p.zones){
+    if (!z.len) continue;
+    const a=P(z.x0,0,0), b=P(z.x0,0,W);
+    gp.strokeStyle='rgba(224,138,30,.6)'; gp.lineWidth=1.2; gp.setLineDash([7,5]);
+    gp.beginPath(); gp.moveTo(a[0],a[1]); gp.lineTo(b[0],b[1]); gp.stroke(); gp.setLineDash([]);
+  }
+
+  drawShell(gp, P, 'rgba(20,24,27,.45)', 1.1);
+
+  // cartons — the full load, every layer, no build-in-progress highlight
+  const all = [];
+  for (const z of p.zones) for (const b of z.boxes) all.push(b);
+
+  const items = all.map(b=>{
+    const c = P(b.x+b.dx/2, b.y+b.dy/2, b.z+b.dz/2);
+    return {b, depth:c[2]};
+  }).sort((p,q)=> (q.depth - p.depth) || (p.b.x+p.b.z) - (q.b.x+q.b.z));
+
+  gp.lineWidth = items.length > 900 ? 0.4 : 0.7;
+
+  for (const it of items){
+    const b = it.b;
+    const base = b.turned ? shade(b.color, -0.3) : b.color;
+    const faces = visibleFaces(b, P);
+    for (const fc of faces){
+      const ip = inflatePts(fc.pts, 1.4);
+      gp.beginPath();
+      gp.moveTo(ip[0][0],ip[0][1]);
+      for (let i=1;i<4;i++) gp.lineTo(ip[i][0],ip[i][1]);
+      gp.closePath();
+      gp.fillStyle = shade(base, fc.lit);
+      gp.fill();
+    }
+    gp.strokeStyle = 'rgba(20,24,27,.45)';
+    for (const fc of faces){
+      gp.beginPath();
+      gp.moveTo(fc.pts[0][0],fc.pts[0][1]);
+      for (let i=1;i<4;i++) gp.lineTo(fc.pts[i][0],fc.pts[i][1]);
+      gp.closePath();
+      gp.stroke();
+    }
+  }
+
+  drawShell(gp, P, 'rgba(20,24,27,.8)', 1.3);
+
+  // door aperture marker
+  const d0=P(L,0,0), d1=P(L,H,0), d2=P(L,H,W), d3=P(L,0,W);
+  gp.strokeStyle='rgba(224,138,30,.9)'; gp.lineWidth=2;
+  gp.beginPath(); gp.moveTo(d0[0],d0[1]); gp.lineTo(d1[0],d1[1]); gp.lineTo(d2[0],d2[1]); gp.lineTo(d3[0],d3[1]); gp.stroke();
+  const dm = P(L, H*0.5, W*0.5);
+  gp.font = `${heroMode?'700 16px':'600 12px'} -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif`;
+  gp.fillStyle = '#A85D0C';
+  gp.textAlign='center';
+  gp.fillText('DOORS', dm[0], dm[1]);
+
+  if (heroMode) drawLoadArrow(gp, P, loadDirection);
+  drawZoneCodes(gp, P, p.zones, null, heroMode);
+}
+
+function renderPrintLegend(elArg, planArg){
+  const el = elArg || document.getElementById('legendPrint');
+  const p = planArg || plan;
+  if (!el || !p) return;
+  el.innerHTML = p.zones.map(z =>
+    `<span><i style="background:${z.color}"></i>${boxCode(z.tag)} ${shortName(z.sku.name)} · ${z.loaded} ctn</span>`).join('');
+}
+
+// Floating box-code pill above each zone's currently-visible stack — the
+// same code shown on that carton type's card (Cargo dimensions/Packing
+// steps) so a crew member looking at the model can immediately tie a block
+// of cartons back to its entry in the list, not just by matching colours.
+// boxFilter lets the caller restrict which boxes count towards "how tall is
+// this zone right now" — the interactive view needs that to respect the
+// layer/piece scrubber, the print view passes null (always the full load).
+// big=true (the print hero view) also shows the 1/2/3 loading sequence
+// number, in a larger pill — that's the thing a warehouse worker actually
+// scans for first ("what do I load first"), the letter code is secondary.
+function drawZoneCodes(ctx, P, zones, boxFilter, big){
+  const fontPx = big ? 20 : 12;
+  ctx.font = `800 ${fontPx}px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  // Narrow zones sit close together along the length axis — their labels can
+  // collide if all drawn at the same height. Rather than guessing which
+  // zones are "narrow enough" to need it, actually measure each label against
+  // the previous one's real projected position and only stagger when they'd
+  // truly overlap (two adjacent short zones actually collided into garbled
+  // text in testing before this fix, in both the small on-screen labels and
+  // the larger print ones — the fix has to cover both, not just print).
+  const visibleZones = zones.filter(z => (boxFilter ? z.boxes.filter(boxFilter) : z.boxes).length);
+  const baseOffset = big ? 220 : 140;
+  // A world-space height offset barely moves the label on screen at typical
+  // camera pitches (height mostly maps to screen-Y at a small, compressed
+  // ratio) — that's why an earlier version of this stagger did nothing
+  // visible. Working directly in screen pixels after projecting once is the
+  // only reliable way to guarantee real separation regardless of camera angle.
+  const pixelStagger = big ? 36 : 22;
+  let prev = null;
+  visibleZones.forEach(z => {
+    const visible = boxFilter ? z.boxes.filter(boxFilter) : z.boxes;
+    const top = Math.max(...visible.map(b=>b.y+b.dy));
+    const code = big ? `${z.buildOrder+1} · ${boxCode(z.tag)}` : boxCode(z.tag);
+    const padX = big ? 12 : 7, h = big ? 30 : 18;
+    const halfW = ctx.measureText(code).width/2 + padX;
+    const basePt = P(z.x0 + z.len/2, top + baseOffset, box.W/2);
+    const overlaps = prev && Math.abs(basePt[0]-prev.x) < (halfW+prev.halfW+6);
+    const pt = overlaps ? [basePt[0], basePt[1]-pixelStagger] : basePt;
+    ctx.fillStyle = 'rgba(15,18,22,.88)';
+    ctx.beginPath();
+    ctx.roundRect(pt[0]-halfW, pt[1]-h/2, halfW*2, h, big ? 8 : 5);
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.fillText(code, pt[0], pt[1]+0.5);
+    prev = {x: pt[0], halfW};
+  });
+}
+function boxCode(tag){ return 'BX-'+tag; }
+
+// The one sentence a first-time reader needs before they even look at the
+// picture: what order, and which direction. Everything else on the page is
+// detail supporting this.
+function loadOrderCaption(p){
+  const loaded = p.zones.filter(z=>z.loaded>0).slice().sort((a,b)=>a.buildOrder-b.buildOrder);
+  if (!loaded.length) return 'No cargo is loaded in this container yet.';
+  const dirText = loadDirection==='rear'
+    ? 'Start at the doors and work towards the front wall.'
+    : 'Start at the front wall (far from the doors) and work towards the doors.';
+  const steps = loaded.map((z,i)=> `${i+1}) ${boxCode(z.tag)} &ndash; ${shortName(z.sku.name)}`).join(' &rarr; ');
+  return `<b>Load order:</b> ${steps}. ${dirText}`;
+}
+
+// A big arrow along the floor centreline, showing which end to start
+// loading from and which way the crew works down the container — the
+// single most important piece of orientation for someone who's never seen
+// this drawing style before. Points from the loading-order's starting end
+// towards its finishing end, regardless of which physical wall that is.
+function drawLoadArrow(ctx, P, dir){
+  const L = box.L, W = box.W;
+  const margin = L*0.08;
+  const fromX = dir==='rear' ? L-margin : margin;
+  const toX   = dir==='rear' ? margin   : L-margin;
+  const a = P(fromX, 0, W/2), b = P(toX, 0, W/2);
+  const dx = b[0]-a[0], dy = b[1]-a[1];
+  const len = Math.hypot(dx,dy) || 1;
+  const ux = dx/len, uy = dy/len;
+  const headLen = 22;
+  const shaftEnd = [b[0]-ux*headLen, b[1]-uy*headLen];
+  ctx.strokeStyle = 'rgba(200,16,46,.85)';
+  ctx.lineWidth = 5;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(a[0],a[1]); ctx.lineTo(shaftEnd[0],shaftEnd[1]); ctx.stroke();
+  const perpX = -uy, perpY = ux;
+  ctx.fillStyle = 'rgba(200,16,46,.85)';
+  ctx.beginPath();
+  ctx.moveTo(b[0],b[1]);
+  ctx.lineTo(shaftEnd[0]+perpX*9, shaftEnd[1]+perpY*9);
+  ctx.lineTo(shaftEnd[0]-perpX*9, shaftEnd[1]-perpY*9);
+  ctx.closePath(); ctx.fill();
+  ctx.font = "700 13px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+  ctx.fillStyle = '#C8102E';
+  ctx.textAlign = 'center';
+  ctx.fillText('LOAD THIS WAY', (a[0]+b[0])/2, Math.min(a[1],b[1])-12);
+}
+
+function drawShell(ctx, P, colour, lw){
+  const L=box.L,W=box.W,H=box.H;
+  const v=[[0,0,0],[L,0,0],[L,0,W],[0,0,W],[0,H,0],[L,H,0],[L,H,W],[0,H,W]].map(p=>P(p[0],p[1],p[2]));
+  const E=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
+  ctx.strokeStyle=colour; ctx.lineWidth=lw;
+  ctx.beginPath();
+  for (const e of E){ ctx.moveTo(v[e[0]][0],v[e[0]][1]); ctx.lineTo(v[e[1]][0],v[e[1]][1]); }
+  ctx.stroke();
+}
+
+function visibleFaces(b, P){
+  const x0=b.x, x1=b.x+b.dx, y0=b.y, y1=b.y+b.dy, z0=b.z, z1=b.z+b.dz;
+  const p = {};
+  const key=(a,c,d)=>a+'_'+c+'_'+d;
+  function pt(a,c,d){ const k=key(a,c,d); if(!p[k]) p[k]=P(a,c,d); return p[k]; }
+  const cand = [
+    // top / bottom  (brightest)
+    {pts:[pt(x0,y1,z0),pt(x1,y1,z0),pt(x1,y1,z1),pt(x0,y1,z1)], lit: 0.26, c:[ (x0+x1)/2, y1, (z0+z1)/2 ]},
+    {pts:[pt(x0,y0,z0),pt(x1,y0,z0),pt(x1,y0,z1),pt(x0,y0,z1)], lit:-0.42, c:[ (x0+x1)/2, y0, (z0+z1)/2 ]},
+    // ends (mid)
+    {pts:[pt(x1,y0,z0),pt(x1,y0,z1),pt(x1,y1,z1),pt(x1,y1,z0)], lit:-0.10, c:[ x1, (y0+y1)/2, (z0+z1)/2 ]},
+    {pts:[pt(x0,y0,z0),pt(x0,y0,z1),pt(x0,y1,z1),pt(x0,y1,z0)], lit:-0.10, c:[ x0, (y0+y1)/2, (z0+z1)/2 ]},
+    // sides (darkest)
+    {pts:[pt(x0,y0,z1),pt(x1,y0,z1),pt(x1,y1,z1),pt(x0,y1,z1)], lit:-0.28, c:[ (x0+x1)/2, (y0+y1)/2, z1 ]},
+    {pts:[pt(x0,y0,z0),pt(x1,y0,z0),pt(x1,y1,z0),pt(x0,y1,z0)], lit:-0.28, c:[ (x0+x1)/2, (y0+y1)/2, z0 ]}
+  ];
+  // of each opposing pair keep the nearer one
+  const out=[];
+  for (let i=0;i<6;i+=2){
+    const a=cand[i], bb=cand[i+1];
+    const da=P(a.c[0],a.c[1],a.c[2])[2], db=P(bb.c[0],bb.c[1],bb.c[2])[2];
+    const win = da<=db ? a : bb;
+    win.depth = Math.min(da,db);
+    out.push(win);
+  }
+  return out.sort((m,n)=> n.depth - m.depth);
+}
+
+/* ============================================================
+   5. FLOOR PATTERN (top view of the selected layer)
+   ============================================================ */
+const planCv = document.getElementById('plan');
+// canvasArg/planArg/layerArg let the multi-container print generator draw
+// every equipment instance's own floor pattern (always its final/complete
+// layer) onto its own canvas, independent of whatever the interactive
+// on-screen scrubber is currently doing for whichever container is live
+function drawPlan(canvasArg, planArg, layerArg){
+  const cv = canvasArg || planCv;
+  const p = planArg || plan;
+  // The floor pattern is a fixed reference diagram — every layer in a zone
+  // has the same footprint, barring a possible partial final layer, so
+  // there's little value in scrubbing through them; always show the
+  // last/complete one (matching what print always did) unless a caller asks
+  // for a specific layer (the print generator does, per container).
+  const layerN = layerArg != null ? layerArg : (p && p.maxLayers);
+  const pad = 34;
+  const availW = cv.clientWidth || 700;
+  const scale = (availW - pad*2) / box.L;
+  const hpx = Math.max(120, box.W*scale + pad*2 + 22);
+  const size = fitCanvas(cv, hpx);
+  const c = cv.getContext('2d');
+  c.clearRect(0,0,size.w,size.h);
+  if (!p) return;
+  const s = (availW - pad*2) / box.L;
+  const X = v => pad + v*s;
+  const Z = v => pad + v*s;
+
+  // container outline
+  c.fillStyle='#F8F7FC';
+  c.fillRect(X(0),Z(0),box.L*s,box.W*s);
+  c.strokeStyle='#191A23'; c.lineWidth=1.6;
+  c.strokeRect(X(0),Z(0),box.L*s,box.W*s);
+
+  const layer = layerN-1;
+  for (const z of p.zones){
+    const inLayer = z.boxes.filter(b=>b.layer===layer);
+    if (z.len){
+      c.strokeStyle='rgba(224,138,30,.85)'; c.lineWidth=1.2; c.setLineDash([7,5]);
+      c.beginPath(); c.moveTo(X(z.x0),Z(0)); c.lineTo(X(z.x0),Z(box.W)); c.stroke(); c.setLineDash([]);
+    }
+    for (const b of inLayer){
+      c.fillStyle = shade(z.color, 0.66);
+      c.fillRect(X(b.x),Z(b.z),b.dx*s,b.dz*s);
+      c.strokeStyle = z.color; c.lineWidth = 0.9;
+      c.strokeRect(X(b.x),Z(b.z),b.dx*s,b.dz*s);
+      if (b.dx*s > 9 && b.dz*s > 9){        // long-axis tick
+        c.strokeStyle = shade(z.color,-0.1); c.lineWidth=1.4;
+        c.beginPath();
+        if (b.dx >= b.dz){ c.moveTo(X(b.x)+3, Z(b.z+b.dz/2)); c.lineTo(X(b.x+b.dx)-3, Z(b.z+b.dz/2)); }
+        else { c.moveTo(X(b.x+b.dx/2), Z(b.z)+3); c.lineTo(X(b.x+b.dx/2), Z(b.z+b.dz)-3); }
+        c.stroke();
+      }
+    }
+    // zone label + length
+    if (z.len){
+      const tagText = boxCode(z.tag);
+      c.fillStyle = z.color;
+      c.font = "700 13px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+      c.textAlign='left'; c.textBaseline='alphabetic';
+      c.fillText(tagText, X(z.x0)+4, Z(0)-8);
+      const tagW = c.measureText(tagText).width;
+      c.fillStyle = '#68697D';
+      c.font = "500 10px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+      c.fillText(z.len+' mm', X(z.x0)+8+tagW, Z(0)-8);
+    }
+  }
+
+  // free length
+  if (p.freeLen > 0){
+    c.fillStyle='rgba(20,24,27,.05)';
+    c.fillRect(X(p.usedLen),Z(0),p.freeLen*s,box.W*s);
+    c.fillStyle='#68697D';
+    c.font = "500 10px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+    c.textAlign='center';
+    c.fillText(p.freeLen+' mm free', X(p.usedLen+p.freeLen/2), Z(box.W)+14);
+  }
+
+  // width + length dimensions
+  c.fillStyle='#68697D'; c.font="500 10px -apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif";
+  c.save();
+  c.translate(X(0)-11, Z(box.W/2)); c.rotate(-Math.PI/2);
+  c.textAlign='center'; c.fillText(box.W+' mm', 0, 0);
+  c.restore();
+  c.textAlign='center';
+  c.fillText('DOORS →', X(box.L)-32, Z(0)-8);
+}
+
+/* ============================================================
+   6. TEXT: plate, legend, per-zone readout, loading order
+   ============================================================ */
+const AX = ['length','width','height'];
+function faceWord(o, sku){
+  return {up:sku.d[o.up], along:sku.d[o.along], across:sku.d[o.across]};
+}
+
+// a short, human label derived from the full carton name — used wherever
+// there isn't room for the full name, e.g. the 3D-view legend
+function shortName(name){
+  let s = name.split(/\d/)[0].trim();
+  if (!s) s = name.trim();
+  return s.length > 22 ? s.slice(0,21).trim()+'…' : s;
+}
+
+// Recomputes the plan and redraws everything that ISN'T the sku input list
+// itself — safe to call on every keystroke, since it never touches the DOM
+// nodes the user might currently be typing into.
+function recompute(){
+  containerPlans = buildAllContainers();
+  currentContainer = Math.max(0, Math.min(currentContainer, containerPlans.length-1));
+  plan = containerPlans[currentContainer];
+  const wallTotal = plan.wallCuts.length;
+  if (wallCut != null) wallCut = Math.max(1, Math.min(wallCut, wallTotal));
+  const lay = document.getElementById('lay');
+  lay.max = wallTotal;
+  lay.value = wallCut != null ? wallCut : wallTotal;
+  document.getElementById('layNum').textContent = (wallCut != null ? wallCut : wallTotal) + ' / ' + wallTotal;
+  document.getElementById('planTitle').textContent = 'Layer ' + plan.maxLayers;
+  document.getElementById('skuCount').textContent = skus.length + ' types';
+
+  const pieceTotal = plan.sequence.length;
+  if (pieceCut != null) pieceCut = Math.max(1, Math.min(pieceCut, pieceTotal));
+  document.getElementById('pieceNum').textContent = pieceCut != null ? pieceCut : '—';
+  document.getElementById('pieceTotal').textContent = pieceTotal;
+  document.getElementById('layerBar').classList.toggle('dim', pieceCut != null);
+  document.getElementById('pieceBar').classList.toggle('dim', pieceCut == null);
+
+  // plate — totals across every container in use, since that's the real
+  // shipment (a single container's numbers would understate the job the
+  // moment cargo has spilled into a second or third unit)
+  const totalCartons = containerPlans.reduce((s,p)=>s+p.cartons, 0);
+  const totalKg = containerPlans.reduce((s,p)=>s+p.kg, 0);
+  const totalCbm = containerPlans.reduce((s,p)=>s+p.cbm, 0);
+  const totalBoxCbm = containerPlans.reduce((s,p)=>s+p.boxCbm, 0);
+  const anyOver = containerPlans.some(p=>p.over);
+  document.getElementById('plate').innerHTML = `
+    <div><div class="k">Cartons</div><div class="v">${totalCartons.toLocaleString()}</div></div>
+    <div><div class="k">Space used</div><div class="v">${(100*totalCbm/totalBoxCbm).toFixed(1)}<small>%</small></div></div>
+    <div><div class="k">Volume</div><div class="v">${totalCbm.toFixed(1)}<small> / ${totalBoxCbm.toFixed(1)} m³</small></div></div>
+    <div class="${anyOver?'over':''}"><div class="k">Gross weight</div><div class="v">${Math.round(totalKg).toLocaleString()}<small> kg</small></div></div>
+    <div><div class="k">Load centre</div><div class="v">${plan.cog.toFixed(0)}<small>% of length, this unit</small></div></div>`;
+
+  // container pager — only meaningful once cargo has spilled into more
+  // than one equipment instance; hidden otherwise so the common single-
+  // container case looks exactly as it always has
+  const pager = document.getElementById('containerPager');
+  if (containerPlans.length > 1){
+    pager.style.display = '';
+    document.getElementById('contNum').textContent = currentContainer + 1;
+    document.getElementById('contTotal').textContent = containerPlans.length;
+    document.getElementById('contLabel').textContent = box.name || 'container';
+    document.getElementById('contPrev').disabled = currentContainer === 0;
+    document.getElementById('contNext').disabled = currentContainer === containerPlans.length-1;
+  } else {
+    pager.style.display = 'none';
+  }
+
+  // per-axis utilization — shows which dimension is actually the constraint
+  document.getElementById('utilBreak').innerHTML = `
+    <div>Length <b>${Math.round(plan.usedLen).toLocaleString()}</b> / ${box.L.toLocaleString()} mm · ${plan.lenPct.toFixed(0)}%</div>
+    <div>Width <b>${Math.round(plan.widUsed).toLocaleString()}</b> / ${box.W.toLocaleString()} mm · ${plan.widPct.toFixed(0)}%</div>
+    <div>Height <b>${Math.round(plan.htUsed).toLocaleString()}</b> / ${box.H.toLocaleString()} mm · ${plan.htPct.toFixed(0)}%</div>
+    <div>Floor area <b>${plan.floorArea.toFixed(1)}</b> / ${(box.L*box.W/1e6).toFixed(1)} m² · ${plan.floorPct.toFixed(0)}%</div>`;
+
+  renderCompare();
+
+  // legend — colour swatch + short name + tag, so each colour in the 3D view is identifiable
+  const anyTurned = plan.zones.some(z => (z.pat && z.pat.turnRows*z.pat.turnCols>0) || z.tail);
+  document.getElementById('legend').innerHTML = plan.zones.map(z =>
+    `<span><i style="background:${z.color}"></i>${boxCode(z.tag)} ${shortName(z.sku.name)} · ${z.loaded} ctn</span>`).join('')
+    + (anyTurned ? `<span><i style="background:#68697D"></i>turned 90° (darker)</span>` : '');
+
+  drawView();
+  drawPlan();
+  drawSteps();
+  renderManifest();
+}
+
+function render(){
+  recompute();
+  drawSkuList();
+  renderPackingSkus();
+}
+
+// A prior version of this icon used the SAME box shape for all 3 options,
+// just scaled a few percent with a CSS transform — too subtle to actually
+// look different, which is exactly what made this screen confusing. This
+// draws three genuinely different silhouettes (tall pillar / square / flat
+// brick) with real different coordinates, plus a big up-down arrow and
+// letter directly on the vertical edge, so which dimension stands upright
+// is obvious without reading the caption.
+const ORIENT_SHAPES = {
+  tall: { // narrow footprint, tall — this dimension standing up makes a tall pillar
+    top:[[50,8],[68,18],[50,28],[32,18]], left:[[32,18],[32,82],[50,92],[50,28]], right:[[68,18],[68,82],[50,92],[50,28]],
+    arrowX:12, arrowTop:14, arrowBottom:86
+  },
+  square: { // balanced footprint and height
+    top:[[50,14],[78,29],[50,44],[22,29]], left:[[22,29],[22,76],[50,91],[50,44]], right:[[78,29],[78,76],[50,91],[50,44]],
+    arrowX:8, arrowTop:20, arrowBottom:85
+  },
+  flat: { // wide footprint, short — this dimension standing up makes a flat brick
+    top:[[50,26],[86,42],[50,58],[14,42]], left:[[14,42],[14,68],[50,84],[50,58]], right:[[86,42],[86,68],[50,84],[50,58]],
+    arrowX:5, arrowTop:32, arrowBottom:76
+  }
+};
+function orientSVG(shapeKey, letter){
+  const s = ORIENT_SHAPES[shapeKey];
+  const poly = pts => pts.map(p=>p.join(',')).join(' ');
+  const midY = (s.arrowTop+s.arrowBottom)/2;
+  return `<svg width="76" height="76" viewBox="0 0 100 100">
+    <polygon points="${poly(s.top)}" fill="#E8828F"/>
+    <polygon points="${poly(s.left)}" fill="#C8102E"/>
+    <polygon points="${poly(s.right)}" fill="#9E0C24"/>
+    <line x1="${s.arrowX}" y1="${s.arrowTop+6}" x2="${s.arrowX}" y2="${s.arrowBottom-6}" stroke="#1F2937" stroke-width="2.5"/>
+    <polygon points="${s.arrowX},${s.arrowTop} ${s.arrowX-4},${s.arrowTop+8} ${s.arrowX+4},${s.arrowTop+8}" fill="#1F2937"/>
+    <polygon points="${s.arrowX},${s.arrowBottom} ${s.arrowX-4},${s.arrowBottom-8} ${s.arrowX+4},${s.arrowBottom-8}" fill="#1F2937"/>
+    <text x="${s.arrowX+11}" y="${midY+5}" font-size="15" font-weight="800" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif" fill="#1F2937">${letter}</text>
+  </svg>`;
+}
+const ORIENT_AXES = [
+  { f:'upL', title:'Length upright', caption:'The long side stands up — makes a tall pillar', shape:'tall',   letter:'L' },
+  { f:'upW', title:'Width upright',  caption:'The middle side stands up — a square-ish box',  shape:'square', letter:'W' },
+  { f:'upH', title:'Height upright', caption:'Normal way up — a flatter, wider box',           shape:'flat',   letter:'H' },
+];
+function orientCell(idPrefix, field, title, caption, checked, shapeKey, letter){
+  return `<div class="orient-cell">
+    <div class="lbl-title">${title}</div>
+    ${orientSVG(shapeKey, letter)}
+    <div class="lbl">${caption}</div>
+    <input type="checkbox" id="${idPrefix}${field}" data-f="${field}" ${checked?'checked':''}>
+  </div>`;
+}
+
+// Packing step — per-SKU rotation faces + loading-order priority. Kept out
+// of drawSkuList()'s cards (the Cargo dimensions step) because pier2pier
+// treats "what shape it is" and "how it may be placed" as separate steps.
+// The bulk-apply row up top mirrors pier2pier's "Set same setting for all
+// cargo to" — ticking one there sets that face's checkbox on every SKU
+// below, it isn't its own stored value.
+function renderPackingSkus(){
+  const el = document.getElementById('packingSkus');
+  if (!el) return;
+  const bulkRow = `<div class="bulk-orient">
+    <div class="cap">Set same setting for all cargo to</div>
+    <div class="orient-grid">
+      ${ORIENT_AXES.map(a=>orientCell('bulk', a.f, a.title, a.caption, false, a.shape, a.letter)).join('')}
+    </div>
+  </div>`;
+  const skuRows = skus.map((s,i)=>`
+    <div class="sku" style="--c:${s.color}" data-i="${i}">
+      <div class="top"><span class="box-code">${boxCode(ZONE_TAG[i%7])}</span>
+        <span style="font-weight:600;font-size:13.5px">${s.name.replace(/</g,'&lt;')}</span></div>
+      <div class="orient-grid">
+        ${ORIENT_AXES.map(a=>orientCell('pk'+i, a.f, a.title, a.caption, s[a.f], a.shape, a.letter)).join('')}
+      </div>
+      <label style="margin-top:10px">Loading order</label>
+      <select data-f="loadOrder" class="loadord-sel">
+        <option value="rear" ${s.loadOrder==='rear'?'selected':''}>Load first — nearest the front bulkhead</option>
+        <option value="auto" ${s.loadOrder==='auto'?'selected':''}>No preference (default)</option>
+        <option value="door" ${s.loadOrder==='door'?'selected':''}>Load last — nearest the doors</option>
+      </select>
+    </div>`).join('');
+  el.innerHTML = bulkRow + skuRows;
+
+  const grid = document.getElementById('loadDirGrid');
+  grid.innerHTML = [
+    { dir:'front', label:'Front bulkhead &rarr; doors', flip:false },
+    { dir:'rear',  label:'Doors &rarr; front bulkhead',  flip:true  },
+  ].map(o=>`<div class="loaddir-cell ${loadDirection===o.dir?'sel':''}" data-dir="${o.dir}">
+    <div style="${o.flip?'transform:scaleX(-1)':''}">${LOADDIR_ICON}</div>
+    <div class="cap">${o.label}</div>
+  </div>`).join('');
+}
+const LOADDIR_ICON = `<svg width="52" height="32" viewBox="0 0 120 70">
+  <rect x="4" y="8" width="112" height="54" rx="4" fill="none" stroke="#ADB5BD" stroke-width="3"/>
+  <line x1="16" y1="35" x2="94" y2="35" stroke="#0D6EFD" stroke-width="4"/>
+  <polygon points="94,25 112,35 94,45" fill="#0D6EFD"/>
+</svg>`;
+document.getElementById('packingSkus').addEventListener('input', e=>{
+  const f = e.target.dataset.f;
+  if (!f) return;
+  const bulkCard = e.target.id.startsWith('bulk');
+  if (bulkCard){
+    skus.forEach(s=> s[f] = e.target.checked);
+    render();
+    return;
+  }
+  const card = e.target.closest('.sku'); if (!card) return;
+  const i = +card.dataset.i;
+  const s = skus[i]; if (!s) return;
+  if (f==='loadOrder') s.loadOrder = e.target.value;
+  else s[f] = e.target.checked;
+  render();
+});
+document.getElementById('loadDirGrid').addEventListener('click', e=>{
+  const cell = e.target.closest('.loaddir-cell'); if (!cell) return;
+  loadDirection = cell.dataset.dir;
+  render();
+});
+
+// flat, copy-paste-friendly summary table — one row per loaded zone
+// One row per loaded zone per container — mirrors pier2pier's "Full loading
+// list" with its Group column, so a multi-container plan still shows the
+// complete shipment in one table rather than just whichever unit is on screen.
+function manifestRows(){
+  const rows = [];
+  containerPlans.forEach((p,ci)=>{
+    p.zones.filter(z=>z.loaded>0).forEach(z=> rows.push([
+      ci+1, boxCode(z.tag), z.sku.name, z.loaded, Math.round(z.loaded*z.sku.kg),
+      (z.loaded*z.sku.d[0]*z.sku.d[1]*z.sku.d[2]/1e9).toFixed(3),
+      z.sku.d[0], z.sku.d[1], z.sku.d[2]
+    ]));
+  });
+  return rows;
+}
+const MANIFEST_HEADER = ['Container','Code','Carton','Qty','Weight kg','CBM','L mm','W mm','H mm'];
+
+function renderManifest(){
+  const el = document.getElementById('manifest');
+  if (!el) return;
+  const rows = manifestRows();
+  if (!rows.length){ el.innerHTML = '<p style="color:var(--ink-2);font-size:13px">Nothing loaded yet.</p>'; return; }
+  el.innerHTML = `<table class="manifest-tbl"><thead><tr>${MANIFEST_HEADER.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r=>`<tr>${r.map(v=>`<td>${v}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+}
+
+document.getElementById('copyManifest').onclick = ()=>{
+  const tsv = [MANIFEST_HEADER, ...manifestRows()].map(r=>r.join('\t')).join('\n');
+  const btn = document.getElementById('copyManifest');
+  const orig = btn.textContent;
+  navigator.clipboard.writeText(tsv)
+    .then(()=>{ btn.textContent='Copied!'; setTimeout(()=>btn.textContent=orig, 1200); })
+    .catch(()=>{ prompt('Copy this manifest:', tsv); });
+};
+
+// Patches just the computed bits of each sku card (the summary line, and the
+// read-only quantity shown while "fill" is on) without rebuilding the cards —
+// rebuilding on every keystroke would destroy the input the user is typing
+// into and throw away keystrokes after the first.
+function refreshSkuReadouts(){
+  skus.forEach((s,i)=>{
+    const card = document.querySelector(`.sku[data-i="${i}"]`);
+    if (!card) return;
+    const z = plan.zones[i];
+    const out = z && z.o && z.loaded
+      ? `<b>${z.loaded}</b> cartons · ${z.layersUsed} layers · ${z.len} mm zone${z.short?` · <span class="warn">${z.short} short</span>`:''}`
+      : (z && z.zeroQty ? `0 cartons — set a quantity or tick fill` : `<span class="warn">does not fit</span>`);
+    const outEl = card.querySelector('.out');
+    if (outEl) outEl.innerHTML = out;
+    if (s.fill){
+      const qtyInput = card.querySelector('input[data-f="qty"]');
+      if (qtyInput) qtyInput.value = (z && z.loaded) || 0;
+    }
+  });
+}
+
+function drawSteps(){
+  document.getElementById('steps').innerHTML = stepsHTML(plan);
+}
+
+// A zone falling short reads as a packing failure — unless this container
+// isn't the last one, in which case it's just where this SKU's overflow
+// continues into the next container, not a real problem.
+function shortNote(pl, z){
+  const idx = containerPlans.indexOf(pl);
+  if (idx > -1 && idx < containerPlans.length-1)
+    return ` <span class="n">${z.short} cartons continue in Container ${idx+2}.</span>`;
+  return ` <span class="warn">${z.short} cartons of the requested quantity did not fit.</span>`;
+}
+
+// pure HTML builder (no DOM writes) so the multi-container print generator
+// can build the same instructions for every equipment instance's own plan.
+// Named `pl` (not `p`) — the loop body below already uses `p` for z.pat.
+function stepsHTML(pl){
+  let html = '';
+  for (const z of pl.zones){
+    const s = z.sku;
+    if (!z.o || !z.loaded){
+      const msg = z.zeroQty
+        ? `Quantity is set to 0, so nothing is loaded for this carton yet. Enter a quantity above, or tick &ldquo;Fill the space that is left&rdquo;.`
+        : `No room left in the container for this carton. Reduce the quantities above it or move to a longer container.`;
+      html += `<div class="z" style="--c:${z.color}"><div class="zh"><span class="tag">${boxCode(z.tag)}</span>
+        <span class="t">${s.name}</span></div>
+        <ol><li class="${z.zeroQty?'':'warn'}">${msg}</li></ol></div>`;
+      continue;
+    }
+    const f = faceWord(z.o, s);
+    const p = z.pat;
+    const turnTxt = p.turnRows*p.turnCols > 0
+      ? ` plus <span class="n">${p.turnRows*p.turnCols}</span> turned 90° in the ${p.Wrem} mm strip against the side wall`
+      : '';
+    const gap = p.Wrem - (p.turnRows>0 ? p.turnRows*s.d[z.o.along] : 0);
+    const tailLi = z.tail
+      ? `<li>Squeeze in more: the run leaves a ${z.tail.cols*z.o.w} mm sliver at the far end of this zone — turn <span class="n">${z.tail.perLayer}</span> extra cartons 90° there on every layer (<span class="n">${z.tail.total}</span> more cartons over the whole stack, shown darker in the 3D view) instead of leaving it empty.</li>`
+      : '';
+    html += `<div class="z" style="--c:${z.color}">
+      <div class="zh"><span class="tag">${boxCode(z.tag)}</span><span class="t">${s.name}</span>
+      <span class="d">${s.d[0]}×${s.d[1]}×${s.d[2]} mm · ${s.kg} kg<br>zone ${z.len} mm from ${z.x0} mm</span></div>
+      <ol>
+        <li>Set each carton with the <span class="n">${f.up} mm</span> side upright, the <span class="n">${f.along} mm</span> side pointing towards the doors and the <span class="n">${f.across} mm</span> side across the container.</li>
+        <li>Build one complete cross-section first: <span class="n">${p.rows}</span> cartons across the width${turnTxt}, stacked <span class="n">${z.layersUsed}</span> layers high floor to headroom (${z.o.layers} will fit; headroom above the stack ${z.headroom} mm)${gap>0?`, leaving a ${gap} mm gap at the side wall`:', wall to wall'} — that's <span class="n">${p.rows*z.layersUsed}</span> cartons in this one stack.</li>
+        <li>Then step back towards the doors and build the next complete cross-section the same way. Repeat <span class="n">${z.nCols}</span> times to fill this zone.</li>
+        ${tailLi}
+        <li>Zone total <span class="n">${z.loaded}</span> cartons, <span class="n">${Math.round(z.loaded*s.kg).toLocaleString()} kg</span>.${z.short?shortNote(pl,z):''}</li>
+      </ol></div>`;
+  }
+  return html + tailNotesHTML(pl);
+}
+
+function tailNotesHTML(pl){
+  let h = `<div class="note"><b>Before you load</b><br>
+    Work from the front bulkhead towards the doors, building each cross-section completely — floor to headroom — before stepping back to start the next one. Don't build a single low layer all the way to the doors first; there'd be no way to reach back in and add height without climbing over cartons already placed.
+    Keep the dashed zone lines clear so the carton types stay separated for unloading.
+    ${pl.freeLen>0?`There is <b>${pl.freeLen} mm</b> of empty length at the door end — fill it with airbags or dunnage so the stack cannot shift in transit.`:'The load is length-tight; no dunnage needed at the doors.'}
+    </div>`;
+  if (pl.over)
+    h += `<div class="flag"><b>Overweight.</b> Gross cargo weight ${Math.round(pl.kg).toLocaleString()} kg exceeds the ${box.payload.toLocaleString()} kg payload of this container. Cut quantities of the heaviest carton before loading.</div>`;
+  if (pl.cog < 40 || pl.cog > 60)
+    h += `<div class="flag"><b>Load centre off.</b> The weight sits at ${pl.cog.toFixed(0)}% of the container length; aim for 40–60% so the axles load evenly. Move a heavier carton type towards the ${pl.cog<50?'door':'front'} end.</div>`;
+  if (box.tara) h += `<div class="note">Gross vehicle weight (cargo + ${box.tara.toLocaleString()} kg tare): <b>${Math.round(pl.kg + box.tara).toLocaleString()} kg</b>.</div>`;
+  for (const w of doorWarnings(pl)) h += `<div class="flag"><b>Won't clear the door opening.</b> ${w}</div>`;
+  return h;
+}
+
+// flags any zone whose loaded orientation is wider or taller than the
+// container's door opening — that cargo can't actually be carried in
+function doorWarnings(planArg){
+  if (!box.doorW && !box.doorH) return [];
+  const warns = [];
+  for (const z of (planArg || plan).zones){
+    if (!z.o || !z.loaded) continue;
+    if (box.doorW && z.o.w > box.doorW) warns.push(`${z.sku.name}: ${z.o.w} mm across is wider than the ${box.doorW} mm door opening.`);
+    if (box.doorH && z.o.h > box.doorH) warns.push(`${z.sku.name}: ${z.o.h} mm high is taller than the ${box.doorH} mm door opening.`);
+  }
+  return warns;
+}
+
+/* ============================================================
+   7. UI
+   ============================================================ */
+function drawSkuList(){
+  const el = document.getElementById('skus');
+  el.innerHTML = skus.map((s,i)=>{
+    const z = plan.zones[i];
+    const out = z && z.o && z.loaded
+      ? `<b>${z.loaded}</b> cartons · ${z.layersUsed} layers · ${z.len} mm zone${z.short?` · <span class="warn">${z.short} short</span>`:''}`
+      : (z && z.zeroQty ? `0 cartons — set a quantity or tick fill` : `<span class="warn">does not fit</span>`);
+    const dimsFields = s.shape==='cyl'
+      ? `<div class="fields row2">
+          <div><label>Diameter mm</label><input type="number" value="${s.d[0]}" data-f="diam"></div>
+          <div><label>Height mm</label><input type="number" value="${s.d[2]}" data-f="d2"></div>
+        </div>`
+      : `<div class="fields row3">
+          <div><label>L mm</label><input type="number" value="${s.d[0]}" data-f="d0"></div>
+          <div><label>W mm</label><input type="number" value="${s.d[1]}" data-f="d1"></div>
+          <div><label>H mm</label><input type="number" value="${s.d[2]}" data-f="d2"></div>
+        </div>`;
+    return `<div class="sku" style="--c:${s.color}" data-i="${i}">
+      <div class="top"><span class="box-code">${boxCode(ZONE_TAG[i%7])}</span>
+        <input class="nm" type="text" value="${s.name.replace(/"/g,'&quot;')}" data-f="name" style="border:0;background:none;padding:0;font-family:var(--body);font-weight:600;font-size:13.5px">
+        <button class="kill" data-kill="${i}" title="Remove">✕</button></div>
+      ${dimsFields}
+      <div class="fields row2">
+        <div><label>kg / carton</label><input type="number" step="0.1" value="${s.kg}" data-f="kg"></div>
+        <div><label>Quantity</label><input type="number" value="${s.fill?(z&&z.loaded)||0:s.qty}" data-f="qty" ${s.fill?'disabled':''}></div>
+      </div>
+      <div class="fill" title="This carton automatically takes up whatever length is left after the others are placed — only one carton can be set to fill at a time"><input type="checkbox" id="fill${i}" data-f="fill" ${s.fill?'checked':''}><label for="fill${i}" style="margin:0;letter-spacing:.1em">Fill the space that is left</label></div>
+      <div class="fill" title="Untick to temporarily leave this cargo out of the plan without deleting it"><input type="checkbox" id="incl${i}" data-f="include" ${s.include?'checked':''}><label for="incl${i}" style="margin:0;letter-spacing:.1em">Include in loading</label></div>
+      <div class="fill" title="Whether other cargo may be stacked on top of this one"><input type="checkbox" id="stopL${i}" data-f="stackTop" ${s.stackTop?'checked':''}><label for="stopL${i}" style="margin:0;letter-spacing:.1em">Stacking allowed — on top</label></div>
+      <div class="fill" title="Whether this cargo may be placed under other cargo"><input type="checkbox" id="sundL${i}" data-f="stackUnder" ${s.stackUnder?'checked':''}><label for="sundL${i}" style="margin:0;letter-spacing:.1em">Stacking allowed — under</label></div>
+      <div class="out">${out}</div>
+    </div>`;
+  }).join('');
+}
+
+// when fill moves off a carton, keep the quantity it had actually loaded
+// instead of snapping back to whatever stale number sat in its qty field
+function unfillOthers(exceptIndex){
+  skus.forEach((o,j)=>{
+    if (j===exceptIndex || !o.fill) return;
+    const z = plan && plan.zones[j];
+    if (z && z.loaded) o.qty = z.loaded;
+    o.fill = false;
+  });
+}
+
+document.getElementById('skus').addEventListener('input', e=>{
+  const card = e.target.closest('.sku'); if (!card) return;
+  const i = +card.dataset.i, f = e.target.dataset.f;
+  if (!f) return;
+  const s = skus[i];
+
+  // fill can turn other cards' checkboxes/disabled-state on or off too —
+  // that's a structural change across multiple cards, so a full rebuild is
+  // fine (it's a discrete checkbox click, not something typed keystroke by keystroke)
+  if (f==='fill'){
+    if (!e.target.checked){
+      const z = plan && plan.zones[i];
+      if (z && z.loaded) s.qty = z.loaded;
+    }
+    s.fill = e.target.checked;
+    if (s.fill) unfillOthers(i);
+    render();
+    return;
+  }
+
+  if (f==='name') s.name = e.target.value;
+  else if (f==='upL') s.upL = e.target.checked;
+  else if (f==='upW') s.upW = e.target.checked;
+  else if (f==='upH') s.upH = e.target.checked;
+  else if (f==='include') s.include = e.target.checked;
+  else if (f==='stackTop') s.stackTop = e.target.checked;
+  else if (f==='stackUnder') s.stackUnder = e.target.checked;
+  else if (f==='loadOrder') s.loadOrder = e.target.value;
+  else if (f==='kg') s.kg = Math.max(0, +e.target.value||0);
+  else if (f==='qty') s.qty = Math.max(0, Math.round(+e.target.value||0));
+  else if (f==='diam'){ const v = Math.max(1, Math.round(+e.target.value||1)); s.d[0]=v; s.d[1]=v; }
+  else if (/^d[012]$/.test(f)) s.d[+f[1]] = Math.max(1, Math.round(+e.target.value||1));
+
+  // recompute + patch read-only bits only — never rebuild the cards here,
+  // or typing a multi-digit number would lose focus after the first digit
+  recompute();
+  refreshSkuReadouts();
+});
+document.getElementById('skus').addEventListener('click', e=>{
+  const k = e.target.dataset.kill;
+  if (k === undefined) return;
+  if (skus.length <= 1) return;
+  skus.splice(+k,1);
+  skus.forEach((s,i)=> s.color = PAINT[i%PAINT.length]);
+  render();
+});
+
+const presetSel = document.getElementById('preset');
+presetSel.innerHTML = PRESETS.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
+document.getElementById('add').onclick = ()=>{
+  if (skus.length >= 7) return;
+  const p = PRESETS[+presetSel.value];
+  unfillOthers(-1);
+  skus.push({name:p.name, d:[...p.d], kg:p.kg, qty:0, fill:true, upL:false, upW:false, upH:true,
+             shape:'box', include:true, stackTop:true, stackUnder:true, loadOrder:'auto', color:PAINT[skus.length%PAINT.length]});
+  render();
+};
+
+// cylindrical cargo — packed via its bounding square footprint (diameter ×
+// diameter × height) through the same box-shaped packer and renderer; the
+// carton card shows Diameter/Height instead of separate L/W fields
+document.getElementById('addCyl').onclick = ()=>{
+  if (skus.length >= 7) return;
+  unfillOthers(-1);
+  skus.push({name:'Drum / cylinder', d:[500,500,500], kg:20, qty:0, fill:true, upL:false, upW:false, upH:true,
+             shape:'cyl', include:true, stackTop:true, stackUnder:true, loadOrder:'auto', color:PAINT[skus.length%PAINT.length]});
+  render();
+};
+
+const cbox = document.getElementById('cbox');
+cbox.innerHTML = Object.entries(CONTAINERS).map(([k,v])=>`<option value="${k}">${v.name}</option>`).join('');
+cbox.onchange = ()=>{
+  box = JSON.parse(JSON.stringify(CONTAINERS[cbox.value]));
+  syncContainerFields();
+  wallCut = null; currentContainer = 0;
+  render();
+};
+
+document.getElementById('compareBox').addEventListener('click', e=>{
+  const key = e.target.dataset.use;
+  if (!key) return;
+  box = JSON.parse(JSON.stringify(CONTAINERS[key]));
+  cbox.value = key;
+  syncContainerFields();
+  wallCut = null; currentContainer = 0;
+  render();
+});
+function syncContainerFields(){
+  cL.value=box.L; cW.value=box.W; cH.value=box.H; cP.value=box.payload;
+  cS.value = maxStack || '';
+  cDoor.value = box.door || 'left';
+  cTara.value = box.tara || 0;
+  cDoorW.value = box.doorW || '';
+  cDoorH.value = box.doorH || '';
+  shrinkL.value = box.shrinkL || 100; shrinkLVal.textContent = (box.shrinkL||100)+'%';
+  shrinkW.value = box.shrinkW || 100; shrinkWVal.textContent = (box.shrinkW||100)+'%';
+  shrinkH.value = box.shrinkH || 100; shrinkHVal.textContent = (box.shrinkH||100)+'%';
+}
+['cL','cW','cH','cP','cS'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', ()=>{
+    box.L = Math.max(500, +cL.value||500);
+    box.W = Math.max(500, +cW.value||500);
+    box.H = Math.max(500, +cH.value||500);
+    box.payload = Math.max(0, +cP.value||0);
+    maxStack = cS.value ? Math.max(1, Math.round(+cS.value)) : null;
+    render();
+  });
+});
+['cDoor','cTara','cDoorW','cDoorH'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', ()=>{
+    box.door = cDoor.value;
+    box.tara = Math.max(0, +cTara.value||0);
+    box.doorW = cDoorW.value ? Math.max(1, +cDoorW.value) : null;
+    box.doorH = cDoorH.value ? Math.max(1, +cDoorH.value) : null;
+    render();
+  });
+});
+['shrinkL','shrinkW','shrinkH'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', ()=>{
+    box.shrinkL = +shrinkL.value; box.shrinkW = +shrinkW.value; box.shrinkH = +shrinkH.value;
+    shrinkLVal.textContent = box.shrinkL+'%'; shrinkWVal.textContent = box.shrinkW+'%'; shrinkHVal.textContent = box.shrinkH+'%';
+    render();
+  });
+});
+
+const layEl = document.getElementById('lay');
+layEl.addEventListener('input', ()=>{ wallCut = +layEl.value; pieceCut = null; stopPlay(); render(); });
+
+document.querySelectorAll('.views button').forEach(b=>{
+  b.onclick = ()=>{
+    const v = b.dataset.v;
+    if (v==='iso')  cam = {yaw:-0.62, pitch:0.42, zoom:1};
+    if (v==='top')  cam = {yaw:-0.0001, pitch:1.45, zoom:1};
+    if (v==='side') cam = {yaw:0, pitch:0.04, zoom:1.05};
+    if (v==='door') cam = {yaw:-1.5707, pitch:0.12, zoom:1.15};
+    document.querySelectorAll('.views button').forEach(x=>x.setAttribute('aria-pressed', x===b));
+    drawView();
+  };
+});
+
+// full-screen 3D — reuses the same #view canvas and all its drag/zoom/view
+// handlers as-is; just resizes the container and redraws at the new size
+const stageEl = document.querySelector('.stage');
+const fullscreenBtn = document.getElementById('fullscreenBtn');
+function setStageFullscreen(on){
+  stageEl.classList.toggle('fullscreen', on);
+  fullscreenBtn.innerHTML = on ? '&times; Exit full screen' : '⛶ Full screen';
+  drawView();
+}
+fullscreenBtn.onclick = ()=> setStageFullscreen(!stageEl.classList.contains('fullscreen'));
+window.addEventListener('keydown', e=>{
+  if (e.key === 'Escape' && stageEl.classList.contains('fullscreen')) setStageFullscreen(false);
+});
+
+view.addEventListener('pointerdown', e=>{
+  drag = {x:e.clientX, y:e.clientY, yaw:cam.yaw, pitch:cam.pitch};
+  view.classList.add('drag');
+  view.setPointerCapture(e.pointerId);
+});
+view.addEventListener('pointermove', e=>{
+  if (!drag) return;
+  cam.yaw = drag.yaw + (e.clientX-drag.x)*0.008;
+  cam.pitch = Math.max(-0.25, Math.min(1.5, drag.pitch + (e.clientY-drag.y)*0.006));
+  drawView();
+});
+view.addEventListener('pointerup', ()=>{ drag=null; view.classList.remove('drag'); });
+view.addEventListener('wheel', e=>{
+  e.preventDefault();
+  cam.zoom = Math.max(0.45, Math.min(3.2, cam.zoom * (e.deltaY>0 ? 0.92 : 1.08)));
+  drawView();
+}, {passive:false});
+
+/* build animation */
+let timer = null;
+const playBtn = document.getElementById('play');
+function stopPlay(){ if (timer){ clearInterval(timer); timer=null; playBtn.textContent='Build'; } }
+playBtn.onclick = ()=>{
+  if (timer) { stopPlay(); return; }
+  pieceCut = null;
+  const totalWalls = plan.wallCuts.length;
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce){ wallCut = totalWalls; render(); return; }
+  // A "wall" is one length position, not one height layer — a long zone of
+  // small cartons can have far more of these than it ever had height layers,
+  // so step by more than one per tick to keep the animation's total length
+  // reasonable regardless of how many walls there are.
+  const step = Math.max(1, Math.round(totalWalls / 30));
+  wallCut = Math.min(step, totalWalls); playBtn.textContent='Stop';
+  render();
+  timer = setInterval(()=>{
+    if (wallCut >= totalWalls) { stopPlay(); return; }
+    wallCut = Math.min(wallCut + step, totalWalls); render();
+  }, 480);
+};
+
+// Piece-by-piece scrubbing — steps through the load one carton (or ten) at a
+// time in true crew build order, independent of the whole-layer scrubber above.
+function setPieceCut(n){
+  stopPlay();
+  wallCut = null;
+  const total = plan.sequence.length;
+  pieceCut = Math.max(1, Math.min(n, total));
+  render();
+}
+document.getElementById('pcPrev10').onclick = ()=> setPieceCut((pieceCut ?? plan.sequence.length) - 10);
+document.getElementById('pcPrev').onclick = ()=> setPieceCut((pieceCut ?? plan.sequence.length) - 1);
+document.getElementById('pcNext').onclick = ()=> setPieceCut((pieceCut ?? 0) + 1);
+document.getElementById('pcNext10').onclick = ()=> setPieceCut((pieceCut ?? 0) + 10);
+document.getElementById('pcExit').onclick = ()=>{ pieceCut = null; render(); };
+
+// Container pager — switches which equipment instance's 3D view/floor
+// pattern/loading order is shown; the top plate stays an aggregate across
+// all of them regardless of which one is currently in view.
+document.getElementById('contPrev').onclick = ()=>{
+  if (currentContainer <= 0) return;
+  currentContainer--; wallCut = null; pieceCut = null; render();
+};
+document.getElementById('contNext').onclick = ()=>{
+  if (currentContainer >= containerPlans.length-1) return;
+  currentContainer++; wallCut = null; pieceCut = null; render();
+};
+
+document.getElementById('print').onclick = ()=>window.print();
+document.getElementById('reset').onclick = ()=>{
+  box = JSON.parse(JSON.stringify(CONTAINERS['20DV']));
+  cbox.value='20DV'; maxStack=null; defaultSkus(); wallCut=null; pieceCut=null; currentContainer=0;
+  cam = {yaw:-0.62, pitch:0.42, zoom:1};
+  loadDirection = 'front';
+  palletSpec = {L:1200, W:1000, H:1500, tare:25, maxKg:800};
+  setLoadMode('bulk'); syncPalletFields();
+  syncContainerFields(); render(); goToStep('start');
+};
+
+window.addEventListener('resize', ()=>{ drawView(); drawPlan(); });
+
+// Builds one full "Loaded container / Floor pattern / Loading order" set of
+// print cards per equipment instance in containerPlans, so a multi-container
+// plan prints every unit — not just whichever one happens to be paged into
+// view on screen. Runs on every beforeprint, same reason the single-canvas
+// version used to: these canvases are 0×0 (display:none) until print media
+// is actually active, so they can only be sized/drawn once that's true.
+function buildPrintSections(){
+  const host = document.getElementById('printContainerSections');
+  host.innerHTML = '';
+  const multi = containerPlans.length > 1;
+
+  containerPlans.forEach((p, idx) => {
+    const label = multi ? ` — Container ${idx+1} of ${containerPlans.length} (${box.name||'equipment'})` : '';
+
+    // The big picture a first-time reader actually needs: one large, clearly
+    // numbered view plus a one-line plain-English order of operations. The 5
+    // small side/end/top angles further down are a spatial reference for
+    // "where exactly does this sit" — useful, but not what a warehouse crew
+    // reads first, so they're no longer the only (or the biggest) picture.
+    const heroCard = document.createElement('div');
+    heroCard.className = 'card';
+    heroCard.innerHTML = `<h2>How to load this container${label}</h2>
+      <div class="body">
+        <canvas class="hero-view"></canvas>
+        <div class="legend-print"></div>
+        <p class="load-caption">${loadOrderCaption(p)}</p>
+      </div>`;
+    host.appendChild(heroCard);
+    drawViewPrint(heroCard.querySelector('canvas'), p, PRINT_CAM, {w:900, h:520}, true);
+    renderPrintLegend(heroCard.querySelector('.legend-print'), p);
+
+    // 5 static angles (both sides, both ends, top-down) — a supporting
+    // reference for spatial detail the single hero angle can't show (e.g.
+    // exactly how far a zone sits from the side wall on the far side)
+    const viewCard = document.createElement('div');
+    viewCard.className = 'card';
+    viewCard.innerHTML = `<h2>Reference views from every side${label}</h2>
+      <div class="body">
+        <div class="print-view-grid">
+          ${PRINT_VIEWS.map(v=>`<div class="print-view-cell"><b>${v.label}</b><canvas></canvas></div>`).join('')}
+        </div>
+      </div>`;
+    host.appendChild(viewCard);
+    const cells = viewCard.querySelectorAll('.print-view-cell canvas');
+    PRINT_VIEWS.forEach((v,i)=> drawViewPrint(cells[i], p, v.cam, {w:330, h:230}));
+
+    const planCard = document.createElement('div');
+    planCard.className = 'card';
+    planCard.innerHTML = `<h2>Floor pattern${label} <b>Layer ${p.maxLayers}</b></h2>
+      <div class="body"><canvas></canvas></div>`;
+    host.appendChild(planCard);
+    drawPlan(planCard.querySelector('canvas'), p, p.maxLayers);
+
+    const stepsCard = document.createElement('div');
+    stepsCard.className = 'card';
+    stepsCard.innerHTML = `<h2>Loading order${label}</h2><div class="body steps"></div>`;
+    host.appendChild(stepsCard);
+    stepsCard.querySelector('.body').innerHTML = stepsHTML(p);
+  });
+}
+window.addEventListener('beforeprint', buildPrintSections);
+
+/* ============================================================
+   7b. WIZARD STEP NAVIGATION
+   ============================================================ */
+const WIZARD_STEPS = ['start','cargo','loading','pallets','equipment','packing','result'];
+let currentStep = 'start';
+function goToStep(step){
+  if (!WIZARD_STEPS.includes(step)) return;
+  currentStep = step;
+  document.querySelectorAll('.wz-step').forEach(s=> s.classList.toggle('active', s.dataset.step===step));
+  document.querySelectorAll('#wizardNav button').forEach(b=> b.classList.toggle('active', b.dataset.step===step));
+  window.scrollTo(0,0);
+  // the #view/#plan canvases size themselves from clientWidth at draw time,
+  // which is 0 while their step is display:none — redraw once Result becomes visible
+  if (step==='result'){ drawView(); drawPlan(); }
+}
+document.getElementById('wizardNav').addEventListener('click', e=>{
+  const step = e.target.dataset.step;
+  if (step) goToStep(step);
+});
+document.querySelectorAll('[data-goto]').forEach(b=>{
+  b.addEventListener('click', ()=> goToStep(b.dataset.goto));
+});
+
+// Loading step — bulk cargo skips straight to Equipment; pallets detours
+// through the Pallets step first. Pallet-stacking math is not yet part of
+// the packer itself (bulk cartons are packed either way) — this captures
+// the pallet spec so it's ready for that once it lands.
+let loadMode = 'bulk';
+let palletSpec = {L:1200, W:1000, H:1500, tare:25, maxKg:800};
+function setLoadMode(mode){
+  loadMode = mode;
+  document.getElementById('loadModeBulk').classList.toggle('ghost', mode!=='bulk');
+  document.getElementById('loadModePallet').classList.toggle('ghost', mode!=='pallet');
+  // Pallet dimensions only matter once "Load on pallets" is actually chosen —
+  // otherwise editing them would silently have no effect on the plan. Disable
+  // the nav tab itself (not just grey it out) so a bulk-mode plan can't
+  // accidentally end up with unused pallet edits left behind.
+  const palletsTab = document.querySelector('#wizardNav button[data-step="pallets"]');
+  palletsTab.disabled = mode!=='pallet';
+  palletsTab.title = mode!=='pallet' ? 'Only used when "Load on pallets" is selected on the Loading step' : '';
+  if (mode!=='pallet' && currentStep==='pallets') goToStep('loading');
+}
+document.getElementById('loadModeBulk').onclick = ()=>{ setLoadMode('bulk'); goToStep('equipment'); };
+document.getElementById('loadModePallet').onclick = ()=>{ setLoadMode('pallet'); goToStep('pallets'); };
+
+function syncPalletFields(){
+  palL.value = palletSpec.L; palW.value = palletSpec.W; palH.value = palletSpec.H;
+  palWeight.value = palletSpec.tare; palMaxKg.value = palletSpec.maxKg;
+}
+['palL','palW','palH','palWeight','palMaxKg'].forEach(id=>{
+  document.getElementById(id).addEventListener('input', ()=>{
+    palletSpec = {
+      L: Math.max(1, +palL.value||1), W: Math.max(1, +palW.value||1), H: Math.max(1, +palH.value||1),
+      tare: Math.max(0, +palWeight.value||0), maxKg: Math.max(0, +palMaxKg.value||0)
+    };
+  });
+});
+
+/* ============================================================
+   8. SHAREABLE LINK — the whole plan (container, cartons, and the
+   shipment/sign-off text fields) fits in a URL hash, so a plan can
+   be shared/reopened with no server and no file attachment.
+   ============================================================ */
+function encodeState(){
+  const state = {
+    box, maxStack, loadDirection, loadMode, palletSpec,
+    skus: skus.map(s=>({name:s.name, d:s.d, kg:s.kg, qty:s.qty, fill:s.fill, upL:s.upL, upW:s.upW, upH:s.upH,
+                        shape:s.shape, include:s.include, stackTop:s.stackTop, stackUnder:s.stackUnder, loadOrder:s.loadOrder, color:s.color})),
+    meta: {
+      mRef: mRef.value, mCont: mCont.value, mSeal: mSeal.value, mDate: mDate.value,
+      sPrep: sPrep.value, sCheck: sCheck.value, sDate: sDate.value
+    }
+  };
+  return btoa(encodeURIComponent(JSON.stringify(state)));
+}
+function decodeState(str){
+  try { return JSON.parse(decodeURIComponent(atob(str))); } catch(e){ return null; }
+}
+function tryLoadFromHash(){
+  const m = location.hash.match(/state=([^&]+)/);
+  if (!m) return false;
+  const st = decodeState(m[1]);
+  if (!st || !st.box || !Array.isArray(st.skus) || !st.skus.length) return false;
+  box = st.box;
+  maxStack = st.maxStack || null;
+  loadDirection = st.loadDirection || 'front';
+  loadMode = st.loadMode || 'bulk';
+  if (st.palletSpec) palletSpec = st.palletSpec;
+  skus = st.skus.map(s=>({shape:'box', include:true, stackTop:true, stackUnder:true, loadOrder:'auto', ...s}));
+  const matchKey = Object.keys(CONTAINERS).find(k =>
+    CONTAINERS[k].L===box.L && CONTAINERS[k].W===box.W && CONTAINERS[k].H===box.H && CONTAINERS[k].payload===box.payload);
+  cbox.value = matchKey || 'CUST';
+  if (st.meta){
+    mRef.value = st.meta.mRef||''; mCont.value = st.meta.mCont||''; mSeal.value = st.meta.mSeal||''; mDate.value = st.meta.mDate||'';
+    sPrep.value = st.meta.sPrep||''; sCheck.value = st.meta.sCheck||''; sDate.value = st.meta.sDate||'';
+  }
+  setLoadMode(loadMode);
+  syncContainerFields();
+  syncPalletFields();
+  return true;
+}
+
+document.getElementById('shareLink').onclick = ()=>{
+  const url = location.origin + location.pathname + '#state=' + encodeState();
+  history.replaceState(null, '', url);
+  const btn = document.getElementById('shareLink');
+  const orig = btn.textContent;
+  navigator.clipboard.writeText(url)
+    .then(()=>{ btn.textContent='Link copied!'; setTimeout(()=>btn.textContent=orig, 1200); })
+    .catch(()=>{ prompt('Copy this link:', url); });
+};
+
+/* boot */
+const loadedFromHash = tryLoadFromHash();
+if (!loadedFromHash){
+  defaultSkus();
+  syncContainerFields(); syncPalletFields(); setLoadMode('bulk');
+}
+document.querySelector('.views button').setAttribute('aria-pressed','true');
+render();
+goToStep(loadedFromHash ? 'result' : 'start');
+window.addEventListener('load', ()=>{ drawView(); drawPlan(); });
+</script>
+</body>
+</html>
